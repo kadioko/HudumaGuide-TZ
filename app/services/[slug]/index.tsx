@@ -85,6 +85,33 @@ export default function ServiceDetailsScreen() {
     });
   }
 
+  async function shareChecklist() {
+    const documentLines = selectedGuide.requiredDocuments.map((document) => {
+      const isDone = checklistItems.includes(`doc-${document.id}`);
+      return `${isDone ? "[x]" : "[ ]"} ${pick(language, document.titleSw, document.titleEn)}`;
+    });
+    const stepLines = selectedGuide.steps.map((step, index) => {
+      const isDone = checklistItems.includes(`step-${step.id}`);
+      return `${isDone ? "[x]" : "[ ]"} ${language === "sw" ? "Hatua ya" : "Step"} ${index + 1}: ${pick(language, step.titleSw, step.titleEn)}`;
+    });
+
+    await Share.share({
+      message: [
+        `${pick(language, selectedGuide.titleSw, selectedGuide.titleEn)} - HudumaGuide TZ`,
+        language === "sw" ? `Uko tayari ${readiness.score}%` : `You are ${readiness.score}% ready`,
+        "",
+        language === "sw" ? "Nyaraka unazohitaji:" : "Required documents:",
+        ...documentLines,
+        "",
+        language === "sw" ? "Hatua kwa hatua:" : "Step by step:",
+        ...stepLines,
+        "",
+        selectedGuide.estimatedCostNote,
+        trustNotice
+      ].join("\n")
+    });
+  }
+
   return (
     <Screen>
       <View style={styles.header}>
@@ -199,6 +226,10 @@ export default function ServiceDetailsScreen() {
 
       <View style={styles.buttonGrid}>
         <AppButton title="Share" icon="logo-whatsapp" variant="secondary" onPress={shareGuide} style={styles.gridButton} />
+        <AppButton title={language === "sw" ? "Share checklist" : "Share checklist"} icon="share-social-outline" variant="secondary" onPress={shareChecklist} style={styles.gridButton} />
+      </View>
+
+      <View style={styles.buttonGrid}>
         <AppButton
           title="Report outdated info"
           icon="flag-outline"

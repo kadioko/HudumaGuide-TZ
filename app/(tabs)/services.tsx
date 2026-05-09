@@ -1,15 +1,16 @@
 import { useMemo, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { AppText } from "@/components/AppText";
 import { EmptyState } from "@/components/EmptyState";
 import { Pill } from "@/components/Pill";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
 import { ServiceCard } from "@/components/ServiceCard";
 import { TextField } from "@/components/TextField";
-import { spacing } from "@/constants/theme";
+import { colors, radii, spacing } from "@/constants/theme";
 import { serviceCategories } from "@/data/serviceCategories";
 import { useAppStore } from "@/store/useAppStore";
-import { searchGuides } from "@/utils/search";
+import { searchGuides, searchSuggestions } from "@/utils/search";
 
 export default function ServicesScreen() {
   const [query, setQuery] = useState("");
@@ -29,6 +30,21 @@ export default function ServicesScreen() {
         placeholder="NIDA, TIN, leseni, cheti, BRELA..."
         accessibilityLabel="Search service guides"
       />
+      <View style={styles.suggestionRow}>
+        {searchSuggestions.slice(0, 6).map((suggestion) => (
+          <Pressable
+            key={suggestion}
+            accessibilityRole="button"
+            accessibilityLabel={`${language === "sw" ? "Tafuta" : "Search"} ${suggestion}`}
+            onPress={() => setQuery(suggestion)}
+            style={({ pressed }) => [styles.suggestion, pressed && styles.pressed]}
+          >
+            <AppText variant="small" color={colors.green} style={styles.suggestionText}>
+              {suggestion}
+            </AppText>
+          </Pressable>
+        ))}
+      </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryRow}>
         <Pill label={language === "sw" ? "Zote" : "All"} active={!categoryId} onPress={() => setCategoryId(undefined)} />
@@ -44,6 +60,9 @@ export default function ServicesScreen() {
       </ScrollView>
 
       <View style={styles.results}>
+        <AppText variant="small" muted>
+          {language === "sw" ? `${results.length} guide zimepatikana` : `${results.length} guides found`}
+        </AppText>
         {results.length ? (
           results.map((guide) => <ServiceCard key={guide.id} guide={guide} language={language} />)
         ) : (
@@ -62,6 +81,25 @@ const styles = StyleSheet.create({
   categoryRow: {
     gap: spacing.sm,
     paddingRight: spacing.lg
+  },
+  suggestionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm
+  },
+  suggestion: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.pill
+  },
+  suggestionText: {
+    fontWeight: "800"
+  },
+  pressed: {
+    opacity: 0.72
   },
   results: {
     gap: spacing.md

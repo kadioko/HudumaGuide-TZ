@@ -20,6 +20,8 @@ This first version focuses on five high-value features:
 
 The current upgrade includes a local-first document metadata vault for folders, expiry dates, reminder dates, and notes. Private file upload remains a Supabase Storage follow-up.
 
+The latest upgrade adds scored bilingual service search with common Swahili/English aliases, shareable readiness checklists from service guides, and reminder triage for overdue, today, and upcoming deadlines.
+
 ## Tech Stack
 
 - Expo React Native
@@ -32,6 +34,9 @@ The current upgrade includes a local-first document metadata vault for folders, 
 - Local-first document metadata vault
 - Safe local Msaidizi assistant using approved guide content only
 - BiasharaStart compliance reminders and safe cost-planning buckets
+- Scored bilingual search with low-friction suggestion chips
+- Shareable service readiness checklists
+- Reminder status dashboard for overdue, today, and upcoming tasks
 
 ## Setup
 
