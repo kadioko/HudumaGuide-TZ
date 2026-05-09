@@ -18,7 +18,7 @@ This first version focuses on five high-value features:
 4. BiasharaStart business setup wizard
 5. Reminders
 
-The document vault is intentionally prepared as a next module after the first working version.
+The current upgrade includes a local-first document metadata vault for folders, expiry dates, reminder dates, and notes. Private file upload remains a Supabase Storage follow-up.
 
 ## Tech Stack
 
@@ -29,6 +29,9 @@ The document vault is intentionally prepared as a next module after the first wo
 - React Hook Form + Zod
 - Supabase-ready auth/database/storage layer
 - AsyncStorage persistence for offline-friendly saved guides, checklists, reminders, and business plans
+- Local-first document metadata vault
+- Safe local Msaidizi assistant using approved guide content only
+- BiasharaStart compliance reminders and safe cost-planning buckets
 
 ## Setup
 

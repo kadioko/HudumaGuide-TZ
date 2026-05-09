@@ -17,6 +17,7 @@ import { colors, spacing } from "@/constants/theme";
 import { serviceGuides } from "@/data/serviceGuides";
 import { useAppStore } from "@/store/useAppStore";
 import { trustNotice, formatDate } from "@/utils/copy";
+import { getExpiringDocuments } from "@/utils/documents";
 import { searchGuides } from "@/utils/search";
 
 const quickActions = [
@@ -37,6 +38,7 @@ export default function HomeScreen() {
   const checklistItemsByGuide = useAppStore((state) => state.checklistItemsByGuide);
   const recentGuideSlugs = useAppStore((state) => state.recentGuideSlugs);
   const reminders = useAppStore((state) => state.reminders);
+  const userDocuments = useAppStore((state) => state.userDocuments);
   const businessPlans = useAppStore((state) => state.businessPlans);
 
   const results = useMemo(() => searchGuides(query).slice(0, 3), [query]);
@@ -49,6 +51,7 @@ export default function HomeScreen() {
   const latestPlan = businessPlans[0];
   const planProgress = latestPlan ? `${latestPlan.completedStepIds.length}/${latestPlan.roadmap.length}` : null;
   const completedChecklistItems = Object.values(checklistItemsByGuide).reduce((total, items) => total + items.length, 0);
+  const expiringDocuments = getExpiringDocuments(userDocuments);
 
   return (
     <Screen>
@@ -89,12 +92,26 @@ export default function HomeScreen() {
           tone="blue"
         />
         <MetricTile
-          label={language === "sw" ? "Reminders" : "Reminders"}
-          value={String(reminders.length)}
-          icon="alarm-outline"
+          label={language === "sw" ? "Docs" : "Docs"}
+          value={String(userDocuments.length)}
+          icon="folder-open-outline"
           tone="gold"
         />
       </View>
+
+      {expiringDocuments.length ? (
+        <AppCard>
+          <Pill label={language === "sw" ? "Upcoming deadline" : "Upcoming deadline"} active />
+          <AppText variant="h3">
+            {expiringDocuments[0].title}
+          </AppText>
+          <AppText muted>
+            {language === "sw" ? "Document inahitaji ufuatiliaji kabla ya" : "Document needs follow-up before"}{" "}
+            {expiringDocuments[0].expiresOn ? formatDate(expiringDocuments[0].expiresOn) : ""}
+          </AppText>
+          <AppButton title={language === "sw" ? "Fungua Document Vault" : "Open Document Vault"} icon="folder-open-outline" variant="secondary" onPress={() => router.push("/(tabs)/documents")} />
+        </AppCard>
+      ) : null}
 
       {query ? (
         <View style={styles.stack}>
@@ -104,6 +121,23 @@ export default function HomeScreen() {
           ))}
         </View>
       ) : null}
+
+      <AppCard>
+        <View style={styles.assistantRow}>
+          <View style={styles.assistantIcon}>
+            <Ionicons name="chatbubble-ellipses-outline" size={24} color={colors.green} />
+          </View>
+          <View style={styles.assistantCopy}>
+            <AppText variant="h3">Msaidizi</AppText>
+            <AppText muted>
+              {language === "sw"
+                ? "Uliza kuhusu huduma. Atajibu kwa kutumia guide zilizopo ndani ya app."
+                : "Ask about services. Answers use approved in-app guide content."}
+            </AppText>
+          </View>
+        </View>
+        <AppButton title={language === "sw" ? "Uliza Msaidizi" : "Ask Msaidizi"} icon="chatbubble-ellipses-outline" variant="secondary" onPress={() => router.push("/msaidizi")} />
+      </AppCard>
 
       <View style={styles.quickGrid}>
         {quickActions.map((action) => (
@@ -245,5 +279,22 @@ const styles = StyleSheet.create({
   },
   stack: {
     gap: spacing.md
+  },
+  assistantRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  assistantIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 15,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  assistantCopy: {
+    flex: 1,
+    gap: spacing.xs
   }
 });

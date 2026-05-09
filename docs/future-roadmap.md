@@ -3,14 +3,15 @@
 ## Next Product Slice
 
 1. Supabase Auth
-2. Document Vault with Supabase Storage
+2. Document Vault file upload with Supabase Storage
 3. Local notification scheduling
 4. Admin content dashboard
 5. Full offline guide cache with sync status
+6. User-editable business cost estimates with explicit "not official fee" warnings
 
 ## AI Assistant: Msaidizi
 
-Msaidizi should answer only from approved service guide content in the database. It must not invent fees, claim official authority, or guarantee approval.
+The local MVP version of Msaidizi answers only from approved service guide content bundled in the app. The future Supabase version should answer only from published guide content in the database. It must not invent fees, claim official authority, or guarantee approval.
 
 Fallback phrase:
 

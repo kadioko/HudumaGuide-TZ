@@ -74,7 +74,34 @@ export type Reminder = {
   notes?: string;
   notificationEnabled: boolean;
   linkedServiceSlug?: string;
+  linkedDocumentId?: string;
+  linkedBusinessPlanId?: string;
   createdAt: string;
+};
+
+export type DocumentFolder =
+  | "Personal Documents"
+  | "Business Documents"
+  | "Tax Documents"
+  | "Licences"
+  | "Land/Property"
+  | "Education"
+  | "Family Documents"
+  | "Other";
+
+export type UserDocument = {
+  id: string;
+  title: string;
+  documentType: string;
+  folder: DocumentFolder;
+  expiresOn?: string;
+  reminderOn?: string;
+  notes?: string;
+  fileName?: string;
+  linkedServiceSlug?: string;
+  linkedBusinessPlanId?: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type BusinessStructure =

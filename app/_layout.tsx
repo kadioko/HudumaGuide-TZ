@@ -23,6 +23,7 @@ export default function RootLayout() {
         <Stack.Screen name="services/[slug]/index" options={{ title: "Service Guide" }} />
         <Stack.Screen name="services/[slug]/checklist" options={{ title: "Checklist" }} />
         <Stack.Screen name="checklists" options={{ title: "Saved Checklists" }} />
+        <Stack.Screen name="msaidizi" options={{ title: "Msaidizi" }} />
         <Stack.Screen name="biashara/wizard" options={{ title: "BiasharaStart" }} />
         <Stack.Screen name="biashara/roadmap" options={{ title: "Business Roadmap" }} />
         <Stack.Screen name="biashara/profile" options={{ title: "Business Profile" }} />

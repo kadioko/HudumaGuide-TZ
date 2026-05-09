@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
-import { BusinessPlan, FeedbackReport, Language, Reminder } from "@/types";
+import { BusinessPlan, FeedbackReport, Language, Reminder, UserDocument } from "@/types";
 
 type ChecklistState = Record<string, string[]>;
 const STORAGE_KEY = "hudumaguide-tz-store";
@@ -12,6 +12,7 @@ type AppState = {
   checklistItemsByGuide: ChecklistState;
   recentGuideSlugs: string[];
   reminders: Reminder[];
+  userDocuments: UserDocument[];
   businessPlans: BusinessPlan[];
   feedbackReports: FeedbackReport[];
   completeOnboarding: () => void;
@@ -24,6 +25,8 @@ type AppState = {
   isChecklistItemDone: (guideSlug: string, itemId: string) => boolean;
   addReminder: (reminder: Reminder) => void;
   deleteReminder: (id: string) => void;
+  addDocument: (document: UserDocument) => void;
+  deleteDocument: (id: string) => void;
   addBusinessPlan: (plan: BusinessPlan) => void;
   toggleBusinessRoadmapStep: (planId: string, stepId: string) => void;
   addFeedbackReport: (report: FeedbackReport) => void;
@@ -37,6 +40,7 @@ type PersistedState = Pick<
   | "checklistItemsByGuide"
   | "recentGuideSlugs"
   | "reminders"
+  | "userDocuments"
   | "businessPlans"
   | "feedbackReports"
 >;
@@ -49,6 +53,7 @@ function getPersistedState(state: AppState): PersistedState {
     checklistItemsByGuide: state.checklistItemsByGuide,
     recentGuideSlugs: state.recentGuideSlugs,
     reminders: state.reminders,
+    userDocuments: state.userDocuments,
     businessPlans: state.businessPlans,
     feedbackReports: state.feedbackReports
   };
@@ -61,6 +66,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   checklistItemsByGuide: {},
   recentGuideSlugs: [],
   reminders: [],
+  userDocuments: [],
   businessPlans: [],
   feedbackReports: [],
   completeOnboarding: () => set({ hasCompletedOnboarding: true }),
@@ -115,6 +121,15 @@ export const useAppStore = create<AppState>()((set, get) => ({
   deleteReminder: (id) =>
     set((state) => ({
       reminders: state.reminders.filter((item) => item.id !== id)
+    })),
+  addDocument: (document) =>
+    set((state) => ({
+      userDocuments: [document, ...state.userDocuments]
+    })),
+  deleteDocument: (id) =>
+    set((state) => ({
+      userDocuments: state.userDocuments.filter((item) => item.id !== id),
+      reminders: state.reminders.filter((item) => item.linkedDocumentId !== id)
     })),
   addBusinessPlan: (plan) =>
     set((state) => ({

@@ -1,21 +1,26 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { Alert, StyleSheet, View } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
 import { ChecklistRow } from "@/components/ChecklistRow";
 import { InfoBanner } from "@/components/InfoBanner";
+import { Pill } from "@/components/Pill";
 import { ProgressBar } from "@/components/ProgressBar";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
 import { spacing } from "@/constants/theme";
+import { scheduleLocalReminder } from "@/services/reminderService";
 import { useAppStore } from "@/store/useAppStore";
+import { createBusinessComplianceReminders } from "@/utils/businessCompliance";
 import { legalTaxNotice, pick } from "@/utils/copy";
 
 export default function BusinessRoadmapScreen() {
   const { planId } = useLocalSearchParams<{ planId: string }>();
   const language = useAppStore((state) => state.language);
   const plans = useAppStore((state) => state.businessPlans);
+  const reminders = useAppStore((state) => state.reminders);
+  const addReminder = useAppStore((state) => state.addReminder);
   const toggleBusinessRoadmapStep = useAppStore((state) => state.toggleBusinessRoadmapStep);
   const plan = plans.find((item) => item.id === planId) ?? plans[0];
 
@@ -32,6 +37,28 @@ export default function BusinessRoadmapScreen() {
   }
 
   const progress = plan.roadmap.length ? Math.round((plan.completedStepIds.length / plan.roadmap.length) * 100) : 0;
+  const linkedReminderCount = reminders.filter((reminder) => reminder.linkedBusinessPlanId === plan.id).length;
+
+  async function createComplianceCalendar() {
+    const suggestions = createBusinessComplianceReminders(plan).filter(
+      (suggestion) =>
+        !reminders.some(
+          (reminder) => reminder.linkedBusinessPlanId === plan.id && reminder.title === suggestion.title
+        )
+    );
+
+    if (!suggestions.length) {
+      Alert.alert("Compliance calendar", "Suggested reminders already exist for this business plan.");
+      return;
+    }
+
+    for (const reminder of suggestions) {
+      addReminder(reminder);
+      await scheduleLocalReminder(reminder);
+    }
+
+    Alert.alert("Compliance calendar", `${suggestions.length} reminders added. Confirm dates with official sources.`);
+  }
 
   return (
     <Screen>
@@ -50,6 +77,26 @@ export default function BusinessRoadmapScreen() {
             ? "Roadmap hii ni mwongozo wa kujiandaa. Hakiki mahitaji rasmi kabla ya kuwasilisha maombi."
             : "This roadmap helps you prepare. Confirm official requirements before submitting applications."}
         </AppText>
+      </AppCard>
+
+      <AppCard>
+        <View style={styles.cardHeader}>
+          <View style={styles.cardCopy}>
+            <AppText variant="h3">{language === "sw" ? "Compliance calendar" : "Compliance calendar"}</AppText>
+            <AppText muted>
+              {language === "sw"
+                ? "Tengeneza reminders za rekodi, kodi na leseni bila kudai tarehe rasmi."
+                : "Create record, tax, and licence reminders without claiming official dates."}
+            </AppText>
+          </View>
+          <Pill label={`${linkedReminderCount} reminders`} />
+        </View>
+        <AppButton
+          title={language === "sw" ? "Create suggested reminders" : "Create suggested reminders"}
+          icon="calendar-outline"
+          variant="secondary"
+          onPress={createComplianceCalendar}
+        />
       </AppCard>
 
       <AppCard>
@@ -87,5 +134,14 @@ export default function BusinessRoadmapScreen() {
 const styles = StyleSheet.create({
   roadmapItem: {
     gap: spacing.sm
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md
+  },
+  cardCopy: {
+    flex: 1,
+    gap: spacing.xs
   }
 });

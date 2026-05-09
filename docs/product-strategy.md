@@ -35,11 +35,20 @@ The fastest useful version should reduce confusion around common services and bu
    - Form-based wizard for business type, structure, NIDA, TIN, address, licence, EFD/VFD, employees, tax reminders
    - Personalized roadmap
    - Saved business plans
+   - Suggested compliance reminders for records, tax checks, and licence checks
+   - Cost-planning buckets without invented official fees
 
 5. Reminders
    - Create custom reminders
    - Categories for tax, licence, documents, service follow-up, passport, driving licence, and compliance
    - Link reminders to service/business/document later
+
+6. Document vault metadata
+   - Add local document records
+   - Organize by folder
+   - Track expiry and reminder dates
+   - Store notes and file references
+   - Defer private file upload until Supabase Auth, Storage, and RLS are fully configured
 
 ## Experience Principles
 
@@ -57,7 +66,7 @@ The fastest useful version should reduce confusion around common services and bu
 - No legal/tax advice beyond general guidance
 - No paid APIs
 - No aggressive monetization
-- Document vault is prepared but not fully shipped in this first slice
+- Private document file upload is prepared but not enabled in the local-first slice
 
 ## Success Signals
 

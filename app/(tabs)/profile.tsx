@@ -16,6 +16,7 @@ export default function ProfileScreen() {
   const savedGuides = useAppStore((state) => state.savedGuideSlugs.length);
   const reminders = useAppStore((state) => state.reminders.length);
   const businessPlans = useAppStore((state) => state.businessPlans.length);
+  const documents = useAppStore((state) => state.userDocuments.length);
 
   return (
     <Screen>
@@ -32,13 +33,14 @@ export default function ProfileScreen() {
         <AppText variant="h3">Your MVP data</AppText>
         <AppText muted>Saved guides: {savedGuides}</AppText>
         <AppText muted>Reminders: {reminders}</AppText>
+        <AppText muted>Document records: {documents}</AppText>
         <AppText muted>Business plans: {businessPlans}</AppText>
       </AppCard>
 
       <AppCard>
         <AppText variant="h3">Privacy</AppText>
         <AppText muted>
-          This MVP stores saved checklists, reminders, and business plans locally on your device. Supabase Auth and private cloud storage are prepared for later.
+          This MVP stores saved checklists, document records, reminders, and business plans locally on your device. Supabase Auth and private cloud storage are prepared for later.
         </AppText>
       </AppCard>
 

@@ -5,6 +5,9 @@
 - Run `npm run verify`
 - Run `npm run audit:high`
 - Smoke test onboarding, Home search, service detail, full checklist, Biashara wizard, roadmap, reminders, and profile
+- Smoke test document record creation, folder filtering, expiry status, and linked reminder creation
+- Smoke test Msaidizi with a known query and an unknown query
+- Smoke test Biashara compliance reminder generation and cost-planning buckets
 - Confirm every guide displays the independent guide disclaimer
 - Confirm every official URL placeholder is clearly handled as `TO_BE_VERIFIED`
 
@@ -15,7 +18,7 @@
 - Add `EXPO_PUBLIC_SUPABASE_URL`
 - Add `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 - Confirm RLS is enabled on all app tables
-- Create a private Storage bucket for user documents before enabling uploads
+- Create a private Storage bucket for user document files before enabling uploads
 
 ## Content Review
 
