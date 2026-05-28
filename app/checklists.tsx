@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { SavedGuideCard } from "@/components/SavedGuideCard";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
+import { SyncBanner } from "@/components/SyncBanner";
 import { serviceGuides } from "@/data/serviceGuides";
 import { useAppStore } from "@/store/useAppStore";
 
@@ -27,6 +28,7 @@ export default function ChecklistsScreen() {
             : "Your checklists are stored on-device for low-data use."
         }
       />
+      <SyncBanner />
 
       {savedGuides.length ? (
         savedGuides.map((guide) => (
@@ -56,8 +58,8 @@ export default function ChecklistsScreen() {
         <AppText variant="h3">{language === "sw" ? "Offline note" : "Offline note"}</AppText>
         <AppText muted>
           {language === "sw"
-            ? "Guides na checklist zilizohifadhiwa zipo kwenye kifaa hiki. Cloud sync itaongezwa Supabase Auth ikiunganishwa."
-            : "Saved guides and checklist progress live on this device. Cloud sync comes after Supabase Auth is connected."}
+            ? "Guides na checklist zilizohifadhiwa zinabaki kwenye kifaa kwa low-data na zinasync ukiwa umeingia."
+            : "Saved guides and checklist progress stay available on this device for low-data use and sync when signed in."}
         </AppText>
       </AppCard>
     </Screen>

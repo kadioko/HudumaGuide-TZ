@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { Alert, StyleSheet, View } from "react-native";
+import { Alert, Share, StyleSheet, View } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
@@ -9,11 +9,12 @@ import { Pill } from "@/components/Pill";
 import { ProgressBar } from "@/components/ProgressBar";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
+import { TextField } from "@/components/TextField";
 import { spacing } from "@/constants/theme";
 import { scheduleLocalReminder } from "@/services/reminderService";
 import { useAppStore } from "@/store/useAppStore";
 import { createBusinessComplianceReminders } from "@/utils/businessCompliance";
-import { legalTaxNotice, pick } from "@/utils/copy";
+import { formatDate, legalTaxNotice, pick, trustNotice } from "@/utils/copy";
 
 export default function BusinessRoadmapScreen() {
   const { planId } = useLocalSearchParams<{ planId: string }>();
@@ -22,6 +23,7 @@ export default function BusinessRoadmapScreen() {
   const reminders = useAppStore((state) => state.reminders);
   const addReminder = useAppStore((state) => state.addReminder);
   const toggleBusinessRoadmapStep = useAppStore((state) => state.toggleBusinessRoadmapStep);
+  const updateBusinessRoadmapStepNote = useAppStore((state) => state.updateBusinessRoadmapStepNote);
   const plan = plans.find((item) => item.id === planId) ?? plans[0];
 
   if (!plan) {
@@ -58,6 +60,29 @@ export default function BusinessRoadmapScreen() {
     }
 
     Alert.alert("Compliance calendar", `${suggestions.length} reminders added. Confirm dates with official sources.`);
+  }
+
+  async function shareRoadmap() {
+    const lines = plan.roadmap.map((step, index) => {
+      const done = plan.completedStepIds.includes(step.id);
+      const note = plan.roadmapStepNotes?.[step.id];
+      return [`${done ? "[x]" : "[ ]"} ${index + 1}. ${pick(language, step.titleSw, step.titleEn)}`, note ? `   Note: ${note}` : undefined]
+        .filter(Boolean)
+        .join("\n");
+    });
+
+    await Share.share({
+      message: [
+        `${plan.businessName} - BiasharaStart TZ Roadmap`,
+        `Progress: ${plan.completedStepIds.length}/${plan.roadmap.length}`,
+        `Structure: ${plan.structure.replace("_", " ")}`,
+        "",
+        ...lines,
+        "",
+        legalTaxNotice,
+        trustNotice
+      ].join("\n")
+    });
   }
 
   return (
@@ -116,6 +141,17 @@ export default function BusinessRoadmapScreen() {
                 onPress={() => router.push(`/services/${step.linkedServiceSlug}`)}
               />
             ) : null}
+            {plan.roadmapStepCompletedAt?.[step.id] ? (
+              <AppText variant="small" muted>
+                Completed: {formatDate(plan.roadmapStepCompletedAt[step.id])}
+              </AppText>
+            ) : null}
+            <TextField
+              label={language === "sw" ? "Step note" : "Step note"}
+              value={plan.roadmapStepNotes?.[step.id] ?? ""}
+              onChangeText={(note) => updateBusinessRoadmapStepNote(plan.id, step.id, note)}
+              multiline
+            />
           </View>
         ))}
       </AppCard>
@@ -126,6 +162,7 @@ export default function BusinessRoadmapScreen() {
         icon="business-outline"
         onPress={() => router.push({ pathname: "/biashara/profile", params: { planId: plan.id } })}
       />
+      <AppButton title={language === "sw" ? "Share roadmap" : "Share roadmap"} icon="share-social-outline" variant="secondary" onPress={shareRoadmap} />
       <InfoBanner body={legalTaxNotice} tone="warning" />
     </Screen>
   );

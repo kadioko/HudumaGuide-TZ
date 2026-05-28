@@ -8,7 +8,11 @@ type ProgressBarProps = {
 export function ProgressBar({ value }: ProgressBarProps) {
   const normalized = Math.max(0, Math.min(100, value));
   return (
-    <View style={styles.track}>
+    <View
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 0, max: 100, now: normalized }}
+      style={styles.track}
+    >
       <View style={[styles.fill, { width: `${normalized}%` }]} />
     </View>
   );

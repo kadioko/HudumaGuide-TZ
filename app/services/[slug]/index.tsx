@@ -11,6 +11,7 @@ import { Pill } from "@/components/Pill";
 import { ProgressBar } from "@/components/ProgressBar";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
+import { SyncBanner } from "@/components/SyncBanner";
 import { colors, spacing } from "@/constants/theme";
 import { serviceCategories } from "@/data/serviceCategories";
 import { useAppStore } from "@/store/useAppStore";
@@ -121,6 +122,7 @@ export default function ServiceDetailsScreen() {
       </View>
 
       <InfoBanner title="Independent guide" body={trustNotice} tone="warning" />
+      <SyncBanner />
 
       <AppCard>
         <View style={styles.scoreHeader}>

@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
+import { useEffect, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, StyleSheet, View } from "react-native";
 import { z } from "zod";
@@ -11,6 +12,7 @@ import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
 import { TextField } from "@/components/TextField";
 import { colors, radii, spacing } from "@/constants/theme";
+import { trackAnalyticsEvent } from "@/services/analyticsService";
 import { useAppStore } from "@/store/useAppStore";
 import { BusinessStructure } from "@/types";
 import { createBusinessPlan } from "@/utils/businessRoadmap";
@@ -47,7 +49,9 @@ type FormValues = z.infer<typeof schema>;
 
 export default function BusinessWizardScreen() {
   const language = useAppStore((state) => state.language);
+  const userProfile = useAppStore((state) => state.userProfile);
   const addBusinessPlan = useAppStore((state) => state.addBusinessPlan);
+  const completed = useRef(false);
   const {
     control,
     handleSubmit,
@@ -73,9 +77,24 @@ export default function BusinessWizardScreen() {
     }
   });
 
+  useEffect(() => {
+    void trackAnalyticsEvent("business_wizard_started", { language }, userProfile?.id);
+    return () => {
+      if (!completed.current) {
+        void trackAnalyticsEvent("business_wizard_dropoff", { step: "before_submit", language }, userProfile?.id);
+      }
+    };
+  }, [language, userProfile?.id]);
+
   function onSubmit(values: FormValues) {
+    completed.current = true;
     const plan = createBusinessPlan(values, values.businessName, values.ownerName);
     addBusinessPlan(plan);
+    void trackAnalyticsEvent(
+      "business_wizard_completed",
+      { structure: values.preferredStructure, industry: values.industry, language },
+      userProfile?.id
+    );
     router.replace({ pathname: "/biashara/roadmap", params: { planId: plan.id } });
   }
 

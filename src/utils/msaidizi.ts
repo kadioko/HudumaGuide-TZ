@@ -9,6 +9,7 @@ export const msaidiziFallback =
 export type MsaidiziAnswer = {
   text: string;
   guides: ServiceGuide[];
+  citations: { slug: string; title: string; lastVerifiedAt?: string }[];
   confidence: "grounded" | "fallback";
 };
 
@@ -44,23 +45,23 @@ function makeGuideSummary(guide: ServiceGuide, language: Language) {
   ].join("\n\n");
 }
 
-export function answerFromApprovedGuides(question: string, language: Language): MsaidiziAnswer {
+export function answerFromGuideList(question: string, language: Language, guides: ServiceGuide[]): MsaidiziAnswer {
   const cleanQuestion = question.trim();
 
   if (cleanQuestion.length < 2) {
     return {
       text: language === "sw" ? msaidiziFallback : "I am not sure. Please confirm through the official portal or relevant office.",
       guides: [],
+      citations: [],
       confidence: "fallback"
     };
   }
-
-  const guides = searchGuides(cleanQuestion).slice(0, 3);
 
   if (!guides.length) {
     return {
       text: language === "sw" ? msaidiziFallback : "I am not sure. Please confirm through the official portal or relevant office.",
       guides: [],
+      citations: [],
       confidence: "fallback"
     };
   }
@@ -75,6 +76,15 @@ export function answerFromApprovedGuides(question: string, language: Language): 
   return {
     text: `${intro}\n\n${body}\n\n${footer}`,
     guides,
+    citations: guides.map((guide) => ({
+      slug: guide.slug,
+      title: pick(language, guide.titleSw, guide.titleEn),
+      lastVerifiedAt: guide.lastVerifiedAt
+    })),
     confidence: "grounded"
   };
+}
+
+export function answerFromApprovedGuides(question: string, language: Language): MsaidiziAnswer {
+  return answerFromGuideList(question, language, searchGuides(question).slice(0, 3));
 }

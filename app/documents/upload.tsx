@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, StyleSheet, View } from "react-native";
 import { z } from "zod";
@@ -12,6 +13,8 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { TextField } from "@/components/TextField";
 import { colors, radii, spacing } from "@/constants/theme";
 import { documentFolders, documentTypeSuggestions } from "@/data/documentFolders";
+import { isSupabaseConfigured } from "@/lib/supabase";
+import { captureDocumentImage, pickDocumentFile, PickedDocumentFile, uploadDocumentFile } from "@/services/documentStorageService";
 import { scheduleLocalReminder } from "@/services/reminderService";
 import { useAppStore } from "@/store/useAppStore";
 import { DocumentFolder, Reminder } from "@/types";
@@ -37,6 +40,8 @@ export default function UploadDocumentScreen() {
   const language = useAppStore((state) => state.language);
   const addDocument = useAppStore((state) => state.addDocument);
   const addReminder = useAppStore((state) => state.addReminder);
+  const businessPlans = useAppStore((state) => state.businessPlans);
+  const userProfile = useAppStore((state) => state.userProfile);
   const {
     control,
     handleSubmit,
@@ -53,18 +58,64 @@ export default function UploadDocumentScreen() {
       notes: ""
     }
   });
+  const [linkedBusinessPlanId, setLinkedBusinessPlanId] = useState<string | undefined>();
+  const [pickedFile, setPickedFile] = useState<PickedDocumentFile | undefined>();
+  const [uploadError, setUploadError] = useState<string | undefined>();
+
+  async function chooseFile() {
+    setUploadError(undefined);
+    try {
+      const file = await pickDocumentFile();
+      if (file) {
+        setPickedFile(file);
+      }
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Unable to pick file.");
+    }
+  }
+
+  async function captureFile() {
+    setUploadError(undefined);
+    try {
+      const file = await captureDocumentImage();
+      if (file) {
+        setPickedFile(file);
+      }
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Unable to capture document image.");
+    }
+  }
 
   async function onSubmit(values: FormValues) {
     const now = new Date().toISOString();
+    const documentId = `document-${Date.now()}`;
+    let storagePath = values.fileName || undefined;
+
+    if (pickedFile) {
+      if (!isSupabaseConfigured || !userProfile) {
+        setUploadError("Sign in with Supabase before uploading private document files.");
+        return;
+      }
+
+      try {
+        storagePath = await uploadDocumentFile(pickedFile, userProfile.id, documentId);
+      } catch (error) {
+        setUploadError(error instanceof Error ? error.message : "Document file upload failed.");
+        return;
+      }
+    }
+
     const document = {
-      id: `document-${Date.now()}`,
+      id: documentId,
       title: values.title,
       documentType: values.documentType,
       folder: values.folder,
       expiresOn: values.expiresOn || undefined,
       reminderOn: values.reminderOn || undefined,
       notes: values.notes || undefined,
-      fileName: values.fileName || undefined,
+      fileName: storagePath,
+      mimeType: pickedFile?.mimeType,
+      linkedBusinessPlanId,
       createdAt: now,
       updatedAt: now
     };
@@ -96,13 +147,13 @@ export default function UploadDocumentScreen() {
         title={language === "sw" ? "Add document record" : "Add document record"}
         subtitle={
           language === "sw"
-            ? "Hifadhi taarifa muhimu bila kupakia file bado."
-            : "Save important metadata without uploading the file yet."
+            ? "Hifadhi taarifa muhimu na pakia file kwa usalama ukiwa umeingia."
+            : "Save important metadata and upload a private file when signed in."
         }
       />
       <InfoBanner
         title="Security note"
-        body="For now, store metadata only. Real file upload should require Supabase Auth, private Storage, and RLS before launch."
+        body="Metadata is available offline. File upload requires sign-in and private Supabase Storage; file contents are not used for analytics."
         tone="warning"
       />
 
@@ -130,6 +181,15 @@ export default function UploadDocumentScreen() {
             <ChoiceGroup label="Folder" value={value} options={documentFolders} onChange={onChange} />
           )}
         />
+        {businessPlans.length ? (
+          <ChoiceGroup
+            label="Linked business profile"
+            value={linkedBusinessPlanId ?? "none"}
+            options={["none", ...businessPlans.map((plan) => plan.id)]}
+            getLabel={(value) => businessPlans.find((plan) => plan.id === value)?.businessName ?? "None"}
+            onChange={(value) => setLinkedBusinessPlanId(value === "none" ? undefined : value)}
+          />
+        ) : null}
       </AppCard>
 
       <AppCard>
@@ -147,11 +207,20 @@ export default function UploadDocumentScreen() {
             <TextField label="Reminder date" placeholder="2026-11-30" value={value} onChangeText={onChange} error={errors.reminderOn?.message} />
           )}
         />
+        <AppButton title={pickedFile ? "Change selected file" : "Pick file to upload"} icon="attach-outline" variant="secondary" onPress={chooseFile} />
+        <AppButton title="Capture with camera" icon="camera-outline" variant="secondary" onPress={captureFile} />
+        {pickedFile ? (
+          <InfoBanner
+            title="Selected file"
+            body={`${pickedFile.name}${pickedFile.size ? ` (${Math.round(pickedFile.size / 1024)} KB)` : ""}`}
+          />
+        ) : null}
+        {uploadError ? <InfoBanner title="Upload issue" body={uploadError} tone="warning" /> : null}
         <Controller
           control={control}
           name="fileName"
           render={({ field: { onChange, value } }) => (
-            <TextField label="File reference" placeholder="Optional filename or storage reference" value={value} onChangeText={onChange} />
+            <TextField label="Manual file reference" placeholder="Optional filename or storage reference" value={value} onChangeText={onChange} />
           )}
         />
         <Controller
@@ -172,11 +241,13 @@ function ChoiceGroup<T extends string>({
   label,
   value,
   options,
+  getLabel,
   onChange
 }: {
   label: string;
   value: T;
   options: readonly T[];
+  getLabel?: (value: T) => string;
   onChange: (value: T) => void;
 }) {
   return (
@@ -194,7 +265,7 @@ function ChoiceGroup<T extends string>({
             style={[styles.choice, value === option && styles.choiceActive]}
           >
             <AppText variant="small" color={value === option ? colors.surface : colors.text} style={styles.choiceText}>
-              {option}
+              {getLabel ? getLabel(option) : option}
             </AppText>
           </Pressable>
         ))}

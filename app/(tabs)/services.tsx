@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { AppText } from "@/components/AppText";
 import { EmptyState } from "@/components/EmptyState";
@@ -9,6 +9,7 @@ import { ServiceCard } from "@/components/ServiceCard";
 import { TextField } from "@/components/TextField";
 import { colors, radii, spacing } from "@/constants/theme";
 import { serviceCategories } from "@/data/serviceCategories";
+import { trackAnalyticsEvent } from "@/services/analyticsService";
 import { useAppStore } from "@/store/useAppStore";
 import { searchGuides, searchSuggestions } from "@/utils/search";
 
@@ -16,7 +17,27 @@ export default function ServicesScreen() {
   const [query, setQuery] = useState("");
   const [categoryId, setCategoryId] = useState<string | undefined>();
   const language = useAppStore((state) => state.language);
+  const userProfile = useAppStore((state) => state.userProfile);
   const results = useMemo(() => searchGuides(query, categoryId), [query, categoryId]);
+  const lastTrackedQuery = useRef("");
+
+  useEffect(() => {
+    const cleanQuery = query.trim();
+    if (cleanQuery.length < 2 || cleanQuery === lastTrackedQuery.current) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      lastTrackedQuery.current = cleanQuery;
+      void trackAnalyticsEvent(
+        results.length ? "service_search" : "service_search_no_results",
+        { query: cleanQuery, resultCount: results.length, categoryId, language },
+        userProfile?.id
+      );
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [categoryId, language, query, results.length, userProfile?.id]);
 
   return (
     <Screen>

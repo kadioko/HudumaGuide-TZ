@@ -7,8 +7,10 @@ import { AppText } from "@/components/AppText";
 import { EmptyState } from "@/components/EmptyState";
 import { MetricTile } from "@/components/MetricTile";
 import { Pill } from "@/components/Pill";
+import { RecordSyncPill } from "@/components/RecordSyncPill";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
+import { SyncBanner } from "@/components/SyncBanner";
 import { spacing } from "@/constants/theme";
 import { useAppStore } from "@/store/useAppStore";
 import { formatDate } from "@/utils/copy";
@@ -59,7 +61,9 @@ export default function RemindersScreen() {
         title={language === "sw" ? "Reminders" : "Reminders"}
         subtitle={language === "sw" ? "Kodi, leseni, documents na follow-up." : "Tax, licence, documents, and follow-ups."}
       />
+      <SyncBanner />
       <AppButton title={language === "sw" ? "Create reminder" : "Create reminder"} icon="add-circle-outline" onPress={() => router.push("/reminders/create")} />
+      <AppButton title="Notification settings" icon="notifications-outline" variant="secondary" onPress={() => router.push("/notifications/settings")} />
 
       <View style={styles.metrics}>
         <MetricTile label={language === "sw" ? "Overdue" : "Overdue"} value={String(reminderGroups.overdue.length)} icon="alert-circle-outline" tone="gold" />
@@ -83,6 +87,7 @@ export default function RemindersScreen() {
           reminderGroups.visible.map((reminder) => (
             <AppCard key={reminder.id}>
               <View style={styles.row}>
+                <RecordSyncPill createdAt={reminder.createdAt} updatedAt={reminder.updatedAt} />
                 <Pill label={getReminderStatus(reminder.date)} active={getReminderStatus(reminder.date) !== "upcoming"} />
                 <Pill label={reminder.category} />
                 <Pill label={reminder.repeat === "none" ? "one-time" : reminder.repeat} />

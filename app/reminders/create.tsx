@@ -31,6 +31,7 @@ const schema = z.object({
   category: z.enum(["document", "licence", "tax", "service", "passport", "driving", "business", "custom"]),
   date: z.string().refine((value) => !Number.isNaN(new Date(value).getTime()), "Use YYYY-MM-DD format"),
   repeat: z.enum(["none", "weekly", "monthly", "yearly"]),
+  preReminderMode: z.enum(["none", "1", "7", "both"]),
   notes: z.string().optional(),
   notificationEnabled: z.boolean()
 });
@@ -41,6 +42,7 @@ export default function CreateReminderScreen() {
   const params = useLocalSearchParams<{ title?: string; linkedServiceSlug?: string }>();
   const addReminder = useAppStore((state) => state.addReminder);
   const language = useAppStore((state) => state.language);
+  const notificationPreferences = useAppStore((state) => state.notificationPreferences);
   const {
     control,
     handleSubmit,
@@ -52,12 +54,19 @@ export default function CreateReminderScreen() {
       category: params.linkedServiceSlug ? "service" : "custom",
       date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
       repeat: "none",
+      preReminderMode: "both",
       notes: "",
       notificationEnabled: true
     }
   });
 
   async function onSubmit(values: FormValues) {
+    const preReminderDays =
+      values.preReminderMode === "both"
+        ? [7, 1]
+        : values.preReminderMode === "none"
+          ? []
+          : [Number(values.preReminderMode)];
     const reminder = {
       id: `reminder-${Date.now()}`,
       title: values.title,
@@ -66,12 +75,18 @@ export default function CreateReminderScreen() {
       repeat: values.repeat,
       notes: values.notes,
       notificationEnabled: values.notificationEnabled,
+      preReminderDays,
       linkedServiceSlug: params.linkedServiceSlug,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
-    addReminder(reminder);
-    await scheduleLocalReminder(reminder);
+    const scheduledNotificationIds = await scheduleLocalReminder(reminder, notificationPreferences);
+    addReminder({
+      ...reminder,
+      scheduledNotificationIds,
+      lastScheduledAt: scheduledNotificationIds.length ? new Date().toISOString() : undefined
+    });
     router.replace("/(tabs)/reminders");
   }
 
@@ -123,6 +138,23 @@ export default function CreateReminderScreen() {
                 { value: "weekly", label: "Weekly" },
                 { value: "monthly", label: "Monthly" },
                 { value: "yearly", label: "Yearly" }
+              ]}
+              onChange={onChange}
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="preReminderMode"
+          render={({ field: { onChange, value } }) => (
+            <ChoiceGroup
+              label="Pre-deadline alerts"
+              value={value}
+              options={[
+                { value: "both", label: "7 & 1 days" },
+                { value: "7", label: "7 days" },
+                { value: "1", label: "1 day" },
+                { value: "none", label: "None" }
               ]}
               onChange={onChange}
             />

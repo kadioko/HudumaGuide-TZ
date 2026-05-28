@@ -6,8 +6,10 @@ import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
 import { InfoBanner } from "@/components/InfoBanner";
 import { ProgressBar } from "@/components/ProgressBar";
+import { RecordSyncPill } from "@/components/RecordSyncPill";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
+import { SyncBanner } from "@/components/SyncBanner";
 import { colors, spacing } from "@/constants/theme";
 import { businessStructures } from "@/data/businessStructures";
 import { useAppStore } from "@/store/useAppStore";
@@ -33,6 +35,8 @@ export default function BiasharaScreen() {
         </View>
       </View>
 
+      <SyncBanner />
+
       <AppButton
         title={language === "sw" ? "Start New Business Plan" : "Start New Business Plan"}
         icon="add-circle-outline"
@@ -46,6 +50,9 @@ export default function BiasharaScreen() {
             const progress = plan.roadmap.length ? Math.round((plan.completedStepIds.length / plan.roadmap.length) * 100) : 0;
             return (
               <AppCard key={plan.id}>
+                <View style={styles.planMeta}>
+                  <RecordSyncPill createdAt={plan.createdAt} updatedAt={plan.updatedAt} />
+                </View>
                 <AppText variant="h3">{plan.businessName}</AppText>
                 <AppText muted>
                   {plan.industry} - {plan.city}
@@ -77,13 +84,21 @@ export default function BiasharaScreen() {
 
       <View style={styles.stack}>
         <SectionHeader title={language === "sw" ? "Aina za muundo wa biashara" : "Business structures"} />
-        {businessStructures.slice(0, 4).map((structure) => (
+        {businessStructures.map((structure) => (
           <AppCard key={structure.id}>
             <AppText variant="h3">{pick(language, structure.titleSw, structure.titleEn)}</AppText>
             <AppText muted>{pick(language, structure.bestForSw, structure.bestForEn)}</AppText>
             <AppText variant="small" color={colors.green} style={styles.bold}>
               {language === "sw" ? "Complexity" : "Complexity"}: {structure.complexity}
             </AppText>
+            <AppText variant="small" style={styles.bold}>
+              {language === "sw" ? "Best documents" : "Typical documents"}
+            </AppText>
+            <AppText muted>{pick(language, structure.documentsSw.join(", "), structure.documentsEn.join(", "))}</AppText>
+            <AppText variant="small" style={styles.bold}>
+              {language === "sw" ? "Common mistake" : "Common mistake"}
+            </AppText>
+            <AppText muted>{pick(language, structure.mistakesSw[0], structure.mistakesEn[0])}</AppText>
           </AppCard>
         ))}
       </View>
@@ -113,6 +128,11 @@ const styles = StyleSheet.create({
   },
   stack: {
     gap: spacing.md
+  },
+  planMeta: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm
   },
   bold: {
     fontWeight: "800"

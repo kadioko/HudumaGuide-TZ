@@ -8,13 +8,17 @@ import { AppButton } from "./AppButton";
 import { AppCard } from "./AppCard";
 import { AppText } from "./AppText";
 import { Pill } from "./Pill";
+import { RecordSyncPill } from "./RecordSyncPill";
 
 type DocumentCardProps = {
   document: UserDocument;
   onDelete: () => void;
+  onOpen?: () => void;
+  onReplaceFile?: () => void;
+  onDeleteFile?: () => void;
 };
 
-export function DocumentCard({ document, onDelete }: DocumentCardProps) {
+export function DocumentCard({ document, onDelete, onOpen, onReplaceFile, onDeleteFile }: DocumentCardProps) {
   const status = getDocumentStatus(document);
   const toneColor =
     status.tone === "danger"
@@ -40,6 +44,7 @@ export function DocumentCard({ document, onDelete }: DocumentCardProps) {
       </View>
 
       <View style={styles.pills}>
+        <RecordSyncPill createdAt={document.createdAt} updatedAt={document.updatedAt} />
         <Pill label={status.label} />
         {document.expiresOn ? <Pill label={`Expires ${formatDate(document.expiresOn)}`} /> : null}
       </View>
@@ -55,6 +60,28 @@ export function DocumentCard({ document, onDelete }: DocumentCardProps) {
         <AppText variant="small" color={toneColor}>
           File reference: {document.fileName}
         </AppText>
+      ) : null}
+
+      <View style={styles.actions}>
+        {document.fileName && onOpen ? (
+          <AppButton title="Preview/download" icon="open-outline" variant="secondary" onPress={onOpen} style={styles.actionButton} />
+        ) : null}
+        {onReplaceFile ? (
+          <AppButton title={document.fileName ? "Replace file" : "Attach file"} icon="attach-outline" variant="secondary" onPress={onReplaceFile} style={styles.actionButton} />
+        ) : null}
+      </View>
+      {document.fileName && onDeleteFile ? (
+        <AppButton
+          title="Delete file only"
+          icon="close-circle-outline"
+          variant="ghost"
+          onPress={() =>
+            Alert.alert("Delete file", "Remove the uploaded file but keep this document record?", [
+              { text: "Cancel", style: "cancel" },
+              { text: "Delete file", style: "destructive", onPress: onDeleteFile }
+            ])
+          }
+        />
       ) : null}
 
       <AppButton
@@ -97,5 +124,13 @@ const styles = StyleSheet.create({
   },
   bold: {
     fontWeight: "800"
+  },
+  actions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm
+  },
+  actionButton: {
+    flex: 1
   }
 });

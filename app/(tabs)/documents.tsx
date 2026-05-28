@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Alert, StyleSheet, View } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
@@ -12,8 +12,10 @@ import { MetricTile } from "@/components/MetricTile";
 import { Pill } from "@/components/Pill";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
+import { SyncBanner } from "@/components/SyncBanner";
 import { colors, spacing } from "@/constants/theme";
 import { documentFolders } from "@/data/documentFolders";
+import { deleteDocumentFile, openDocumentFile, pickDocumentFile, uploadDocumentFile } from "@/services/documentStorageService";
 import { useAppStore } from "@/store/useAppStore";
 import { DocumentFolder } from "@/types";
 import { getDocumentStatus, getExpiringDocuments } from "@/utils/documents";
@@ -23,6 +25,8 @@ export default function DocumentsScreen() {
   const language = useAppStore((state) => state.language);
   const documents = useAppStore((state) => state.userDocuments);
   const deleteDocument = useAppStore((state) => state.deleteDocument);
+  const updateDocument = useAppStore((state) => state.updateDocument);
+  const userProfile = useAppStore((state) => state.userProfile);
 
   const filteredDocuments = useMemo(() => {
     if (selectedFolder === "All") {
@@ -48,9 +52,10 @@ export default function DocumentsScreen() {
 
       <InfoBanner
         title="Privacy-first MVP"
-        body="This version stores document records locally on your device. File upload to Supabase Storage should be enabled only after login, private buckets, and RLS are live."
+        body="Document metadata can sync after sign in. File preview, replacement, and deletion use private Supabase Storage when connected."
         tone="warning"
       />
+      <SyncBanner />
 
       <View style={styles.metrics}>
         <MetricTile label="Documents" value={String(documents.length)} icon="folder-open-outline" />
@@ -88,7 +93,14 @@ export default function DocumentsScreen() {
         <SectionHeader title={selectedFolder === "All" ? "All documents" : selectedFolder} />
         {filteredDocuments.length ? (
           filteredDocuments.map((document) => (
-            <DocumentCard key={document.id} document={document} onDelete={() => deleteDocument(document.id)} />
+            <DocumentCard
+              key={document.id}
+              document={document}
+              onOpen={document.fileName ? () => openDocumentFile(document.fileName as string) : undefined}
+              onReplaceFile={userProfile ? () => replaceDocumentFile(document) : undefined}
+              onDeleteFile={document.fileName ? () => deleteOnlyFile(document) : undefined}
+              onDelete={() => deleteDocumentRecord(document)}
+            />
           ))
         ) : (
           <EmptyState
@@ -104,6 +116,59 @@ export default function DocumentsScreen() {
       </View>
     </Screen>
   );
+
+  async function replaceDocumentFile(document: (typeof documents)[number]) {
+    if (!userProfile) {
+      return;
+    }
+
+    const file = await pickDocumentFile();
+    if (!file) {
+      return;
+    }
+
+    if (document.fileName) {
+      try {
+        await deleteDocumentFile(document.fileName);
+      } catch {
+        Alert.alert("Replace file", "We could not remove the previous file. Check your connection and try again.");
+        return;
+      }
+    }
+
+    try {
+      const storagePath = await uploadDocumentFile(file, userProfile.id, document.id);
+      updateDocument({ ...document, fileName: storagePath, mimeType: file.mimeType });
+    } catch {
+      Alert.alert("Replace file", "We could not upload the replacement file. Check your connection and try again.");
+    }
+  }
+
+  async function deleteOnlyFile(document: (typeof documents)[number]) {
+    if (!document.fileName) {
+      return;
+    }
+
+    try {
+      await deleteDocumentFile(document.fileName);
+      updateDocument({ ...document, fileName: undefined, mimeType: undefined });
+    } catch {
+      Alert.alert("Delete file", "We could not delete this file. Check your connection and try again.");
+    }
+  }
+
+  async function deleteDocumentRecord(document: (typeof documents)[number]) {
+    if (document.fileName) {
+      try {
+        await deleteDocumentFile(document.fileName);
+      } catch {
+        Alert.alert("Delete document", "We could not delete the uploaded file. Check your connection and try again.");
+        return;
+      }
+    }
+
+    deleteDocument(document.id);
+  }
 }
 
 const styles = StyleSheet.create({

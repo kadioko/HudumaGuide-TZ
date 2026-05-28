@@ -174,6 +174,13 @@ export function createBusinessPlan(
     answers,
     roadmap: generateBusinessRoadmap(answers),
     completedStepIds: [],
-    createdAt: new Date().toISOString()
+    roadmapStepNotes: {},
+    roadmapStepCompletedAt: {},
+    costEstimates: [],
+    registrationStatus: "planning",
+    tinStatus: answers.hasTin ? "active" : "needed",
+    licenceStatus: answers.needsLicence ? "needed" : "not_needed",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   };
 }

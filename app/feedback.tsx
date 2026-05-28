@@ -8,6 +8,7 @@ import { AppText } from "@/components/AppText";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
 import { TextField } from "@/components/TextField";
+import { trackAnalyticsEvent } from "@/services/analyticsService";
 import { useAppStore } from "@/store/useAppStore";
 
 const schema = z.object({
@@ -19,6 +20,8 @@ type FormValues = z.infer<typeof schema>;
 export default function FeedbackScreen() {
   const { serviceSlug } = useLocalSearchParams<{ serviceSlug?: string }>();
   const addFeedbackReport = useAppStore((state) => state.addFeedbackReport);
+  const language = useAppStore((state) => state.language);
+  const userProfile = useAppStore((state) => state.userProfile);
   const {
     control,
     handleSubmit,
@@ -32,9 +35,15 @@ export default function FeedbackScreen() {
     addFeedbackReport({
       id: `feedback-${Date.now()}`,
       serviceSlug,
+      category: "outdated_info",
       message: values.message,
       createdAt: new Date().toISOString()
     });
+    void trackAnalyticsEvent(
+      "outdated_report_submitted",
+      { guideSlug: serviceSlug, language },
+      userProfile?.id
+    );
     router.back();
   }
 

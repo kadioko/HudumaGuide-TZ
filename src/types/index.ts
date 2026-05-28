@@ -1,5 +1,66 @@
 export type Language = "sw" | "en";
 
+export type SyncStatus = "local" | "syncing" | "synced" | "error";
+
+export type SyncQueueItem = {
+  id: string;
+  reason: string;
+  queuedAt: string;
+  attempts: number;
+  lastError?: string;
+};
+
+export type OfflineGuideCacheMeta = {
+  cachedAt: string;
+  guideCount: number;
+  savedGuideSlugs: string[];
+};
+
+export type NotificationPreferences = {
+  quietHoursEnabled: boolean;
+  quietHoursStart: string;
+  quietHoursEnd: string;
+  defaultPreReminderDays: number[];
+  permissionEducationSeen: boolean;
+};
+
+export type SecurityPreferences = {
+  biometricLockEnabled: boolean;
+  lastUnlockedAt?: string;
+};
+
+export type AnalyticsEventName =
+  | "service_search"
+  | "service_search_no_results"
+  | "guide_saved"
+  | "business_wizard_started"
+  | "business_wizard_completed"
+  | "business_wizard_dropoff"
+  | "reminder_created"
+  | "outdated_report_submitted"
+  | "language_changed"
+  | "region_city_updated"
+  | "msaidizi_asked"
+  | "support_request_submitted";
+
+export type AnalyticsEvent = {
+  id: string;
+  name: AnalyticsEventName;
+  count: number;
+  payload: Record<string, string | number | boolean | string[] | undefined>;
+  createdAt: string;
+};
+
+export type UserProfile = {
+  id: string;
+  email?: string;
+  fullName?: string;
+  preferredLanguage: Language;
+  region?: string;
+  city?: string;
+  updatedAt?: string;
+};
+
 export type ServiceCategory = {
   id: string;
   titleSw: string;
@@ -52,6 +113,11 @@ export type ServiceGuide = {
   commonMistakesEn: string[];
   faqs: ServiceFaq[];
   lastVerifiedAt: string;
+  expiresReviewAt?: string;
+  verificationStatus?: "draft" | "needs_review" | "verified" | "outdated";
+  reviewerNotes?: string;
+  officialSourceRefs?: string[];
+  published?: boolean;
   disclaimer: string;
 };
 
@@ -73,10 +139,14 @@ export type Reminder = {
   repeat: "none" | "weekly" | "monthly" | "yearly";
   notes?: string;
   notificationEnabled: boolean;
+  preReminderDays?: number[];
+  scheduledNotificationIds?: string[];
+  lastScheduledAt?: string;
   linkedServiceSlug?: string;
   linkedDocumentId?: string;
   linkedBusinessPlanId?: string;
   createdAt: string;
+  updatedAt?: string;
 };
 
 export type DocumentFolder =
@@ -98,6 +168,7 @@ export type UserDocument = {
   reminderOn?: string;
   notes?: string;
   fileName?: string;
+  mimeType?: string;
   linkedServiceSlug?: string;
   linkedBusinessPlanId?: string;
   createdAt: string;
@@ -137,6 +208,14 @@ export type RoadmapStep = {
   linkedServiceSlug?: string;
 };
 
+export type BusinessCostEstimate = {
+  id: string;
+  label: string;
+  amount?: string;
+  notes?: string;
+  officialFee: false;
+};
+
 export type BusinessPlan = {
   id: string;
   businessName: string;
@@ -147,12 +226,20 @@ export type BusinessPlan = {
   answers: BusinessWizardAnswers;
   roadmap: RoadmapStep[];
   completedStepIds: string[];
+  roadmapStepNotes?: Record<string, string>;
+  roadmapStepCompletedAt?: Record<string, string>;
+  costEstimates?: BusinessCostEstimate[];
+  registrationStatus?: "planning" | "in_progress" | "registered" | "paused";
+  tinStatus?: "unknown" | "needed" | "applied" | "active";
+  licenceStatus?: "unknown" | "not_needed" | "needed" | "applied" | "active";
   createdAt: string;
+  updatedAt?: string;
 };
 
 export type FeedbackReport = {
   id: string;
   serviceSlug?: string;
+  category?: "outdated_info" | "support" | "privacy" | "bug" | "safety";
   message: string;
   createdAt: string;
 };

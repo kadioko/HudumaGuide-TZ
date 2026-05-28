@@ -13,8 +13,10 @@ import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
 import { TextField } from "@/components/TextField";
 import { colors, spacing } from "@/constants/theme";
+import { trackAnalyticsEvent } from "@/services/analyticsService";
+import { answerMsaidizi } from "@/services/msaidiziService";
 import { useAppStore } from "@/store/useAppStore";
-import { MsaidiziAnswer, answerFromApprovedGuides, msaidiziFallback } from "@/utils/msaidizi";
+import { MsaidiziAnswer, msaidiziFallback } from "@/utils/msaidizi";
 
 const schema = z.object({
   question: z.string().min(2, "Ask a question")
@@ -26,7 +28,9 @@ const examples = ["NIDA inahitaji nini?", "TIN kwa freelancer", "Kusajili jina l
 
 export default function MsaidiziScreen() {
   const language = useAppStore((state) => state.language);
+  const userProfile = useAppStore((state) => state.userProfile);
   const [answer, setAnswer] = useState<MsaidiziAnswer | null>(null);
+  const [isThinking, setIsThinking] = useState(false);
   const {
     control,
     handleSubmit,
@@ -37,8 +41,26 @@ export default function MsaidiziScreen() {
     defaultValues: { question: "" }
   });
 
-  function onSubmit(values: FormValues) {
-    setAnswer(answerFromApprovedGuides(values.question, language));
+  async function askQuestion(question: string) {
+    setIsThinking(true);
+    const nextAnswer = await answerMsaidizi(question, language, userProfile?.id);
+    setAnswer(nextAnswer);
+    setIsThinking(false);
+    void trackAnalyticsEvent(
+      "msaidizi_asked",
+      {
+        confidence: nextAnswer.confidence,
+        fallbackUsed: nextAnswer.confidence === "fallback",
+        guideSlugs: nextAnswer.guides.map((guide) => guide.slug),
+        questionLength: question.trim().length,
+        language
+      },
+      userProfile?.id
+    );
+  }
+
+  async function onSubmit(values: FormValues) {
+    await askQuestion(values.question);
   }
 
   return (
@@ -84,12 +106,17 @@ export default function MsaidiziScreen() {
               label={example}
               onPress={() => {
                 setValue("question", example);
-                setAnswer(answerFromApprovedGuides(example, language));
+                void askQuestion(example);
               }}
             />
           ))}
         </View>
-        <AppButton title={language === "sw" ? "Uliza Msaidizi" : "Ask Msaidizi"} icon="chatbubble-ellipses-outline" onPress={handleSubmit(onSubmit)} />
+        <AppButton
+          title={language === "sw" ? "Uliza Msaidizi" : "Ask Msaidizi"}
+          icon="chatbubble-ellipses-outline"
+          loading={isThinking}
+          onPress={handleSubmit(onSubmit)}
+        />
       </AppCard>
 
       {answer ? (
@@ -100,6 +127,16 @@ export default function MsaidiziScreen() {
           <AppText style={styles.answerText}>{answer.text}</AppText>
           {answer.guides.length ? (
             <View style={styles.guideActions}>
+              {answer.citations.map((citation) => (
+                <AppCard key={citation.slug} muted>
+                  <AppText variant="small" color={colors.green} style={styles.citationTitle}>
+                    Source: {citation.title}
+                  </AppText>
+                  <AppText variant="tiny" muted>
+                    Last verified: {citation.lastVerifiedAt || "Needs review"}
+                  </AppText>
+                </AppCard>
+              ))}
               {answer.guides.map((guide) => (
                 <AppButton
                   key={guide.slug}
@@ -143,5 +180,8 @@ const styles = StyleSheet.create({
   },
   guideActions: {
     gap: spacing.sm
+  },
+  citationTitle: {
+    fontWeight: "800"
   }
 });

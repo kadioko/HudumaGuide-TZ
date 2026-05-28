@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { colors, radii, spacing } from "@/constants/theme";
 import { AppText } from "./AppText";
 
@@ -21,13 +21,14 @@ export function Pill({ label, active, icon, onPress }: PillProps) {
   );
 
   if (!onPress) {
-    return <Pressable style={[styles.pill, active && styles.active]}>{content}</Pressable>;
+    return <View accessibilityLabel={label} style={[styles.pill, active && styles.active]}>{content}</View>;
   }
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{ selected: Boolean(active) }}
       onPress={onPress}
       style={({ pressed }) => [styles.pill, active && styles.active, pressed && styles.pressed]}
     >
