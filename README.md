@@ -1,5 +1,7 @@
 # HudumaGuide TZ
 
+![HudumaGuide TZ logo](assets/logo.png)
+
 HudumaGuide TZ is a mobile-first Tanzanian civic-tech MVP built with Expo React Native and TypeScript.
 
 Tagline: **Huduma za Serikali na Biashara kwa urahisi.**

@@ -1,0 +1,11 @@
+<svg width="1200" height="400" viewBox="0 0 1200 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="400" rx="72" fill="#F7FAF8"/>
+  <circle cx="200" cy="200" r="116" fill="#0A7A55"/>
+  <path d="M200 82L282 116V186C282 246 246 292 200 316C154 292 118 246 118 186V116L200 82Z" fill="#FFFFFF"/>
+  <path d="M161 199L190 228L243 163" stroke="#0A7A55" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M315 115C344 115 367 138 367 167C367 218 315 286 315 286C315 286 263 218 263 167C263 138 286 115 315 115Z" fill="#1769AA"/>
+  <circle cx="315" cy="166" r="18" fill="#FFFFFF"/>
+  <text x="420" y="184" fill="#17231E" font-family="Inter, Arial, sans-serif" font-size="68" font-weight="800">HudumaGuide</text>
+  <text x="424" y="252" fill="#0A7A55" font-family="Inter, Arial, sans-serif" font-size="42" font-weight="700">TZ</text>
+  <text x="500" y="252" fill="#607068" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="600">Huduma za Serikali na Biashara kwa urahisi</text>
+</svg>
