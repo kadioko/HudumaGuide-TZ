@@ -3,15 +3,15 @@ import Constants from "expo-constants";
 import * as LocalAuthentication from "expo-local-authentication";
 import * as Updates from "expo-updates";
 import { useEffect, useState } from "react";
-import { Alert, Share, StyleSheet, View } from "react-native";
+import { Alert, Share } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
 import { InfoBanner } from "@/components/InfoBanner";
+import { LanguageToggle } from "@/components/LanguageToggle";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
 import { TextField } from "@/components/TextField";
-import { spacing } from "@/constants/theme";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { deleteAccountAndData, exportRemoteUserData } from "@/services/accountService";
 import { clearLocalAnalyticsData, getLocalAnalyticsSummary, trackAnalyticsEvent } from "@/services/analyticsService";
@@ -21,7 +21,6 @@ import { trustNotice } from "@/utils/copy";
 
 export default function ProfileScreen() {
   const language = useAppStore((state) => state.language);
-  const setLanguage = useAppStore((state) => state.setLanguage);
   const userProfile = useAppStore((state) => state.userProfile);
   const syncStatus = useAppStore((state) => state.syncStatus);
   const syncError = useAppStore((state) => state.syncError);
@@ -253,10 +252,7 @@ export default function ProfileScreen() {
 
       <AppCard>
         <AppText variant="h3">Language</AppText>
-        <View style={styles.row}>
-          <AppButton title="Kiswahili" variant={language === "sw" ? "primary" : "secondary"} onPress={() => setLanguage("sw")} style={styles.choice} />
-          <AppButton title="English" variant={language === "en" ? "primary" : "secondary"} onPress={() => setLanguage("en")} style={styles.choice} />
-        </View>
+        <LanguageToggle />
       </AppCard>
 
       <AppCard>
@@ -343,12 +339,3 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    gap: spacing.sm
-  },
-  choice: {
-    flex: 1
-  }
-});

@@ -6,6 +6,7 @@ import { AppButton } from "@/components/AppButton";
 import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
 import { InfoBanner } from "@/components/InfoBanner";
+import { LanguageToggle } from "@/components/LanguageToggle";
 import { MetricTile } from "@/components/MetricTile";
 import { Pill } from "@/components/Pill";
 import { SavedGuideCard } from "@/components/SavedGuideCard";
@@ -84,6 +85,7 @@ export default function HomeScreen() {
           <Ionicons name="shield-checkmark-outline" size={32} color={colors.surface} />
         </View>
       </View>
+      <LanguageToggle compact />
 
       <TextField
         value={query}

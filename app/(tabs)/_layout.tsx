@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { ColorValue } from "react-native";
 import { colors } from "@/constants/theme";
+import { useAppStore } from "@/store/useAppStore";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -15,6 +16,8 @@ function tabIcon(name: IconName) {
 }
 
 export default function TabsLayout() {
+  const language = useAppStore((state) => state.language);
+
   return (
     <Tabs
       screenOptions={{
@@ -34,12 +37,13 @@ export default function TabsLayout() {
         headerShown: false
       }}
     >
-      <Tabs.Screen name="home" options={{ title: "Home", tabBarIcon: tabIcon("home-outline") }} />
-      <Tabs.Screen name="services" options={{ title: "Services", tabBarIcon: tabIcon("search-outline") }} />
-      <Tabs.Screen name="biashara" options={{ title: "Biashara", tabBarIcon: tabIcon("briefcase-outline") }} />
-      <Tabs.Screen name="documents" options={{ title: "Docs", tabBarIcon: tabIcon("folder-open-outline") }} />
-      <Tabs.Screen name="reminders" options={{ title: "Reminders", tabBarIcon: tabIcon("alarm-outline") }} />
-      <Tabs.Screen name="profile" options={{ title: "Profile", tabBarIcon: tabIcon("person-outline") }} />
+      <Tabs.Screen name="home" options={{ title: language === "sw" ? "Nyumbani" : "Home", tabBarIcon: tabIcon("home-outline") }} />
+      <Tabs.Screen name="services" options={{ title: language === "sw" ? "Huduma" : "Services", tabBarIcon: tabIcon("search-outline") }} />
+      <Tabs.Screen name="biashara" options={{ title: language === "sw" ? "Biashara" : "Business", tabBarIcon: tabIcon("briefcase-outline") }} />
+      <Tabs.Screen name="documents" options={{ title: language === "sw" ? "Nyaraka" : "Documents", tabBarIcon: tabIcon("folder-open-outline") }} />
+      <Tabs.Screen name="reminders" options={{ title: language === "sw" ? "Reminders" : "Reminders", tabBarIcon: tabIcon("alarm-outline") }} />
+      <Tabs.Screen name="profile" options={{ title: language === "sw" ? "Profile" : "Profile", tabBarIcon: tabIcon("person-outline") }} />
+      <Tabs.Screen name="error" options={{ href: null }} />
     </Tabs>
   );
 }

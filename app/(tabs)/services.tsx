@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { AppText } from "@/components/AppText";
 import { EmptyState } from "@/components/EmptyState";
 import { AppButton } from "@/components/AppButton";
+import { LanguageToggle } from "@/components/LanguageToggle";
 import { Pill } from "@/components/Pill";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -47,6 +48,7 @@ export default function ServicesScreen() {
         title={language === "sw" ? "HudumaGuide TZ" : "Government Services"}
         subtitle={language === "sw" ? "Tafuta huduma kwa Kiswahili au English." : "Search in Swahili or English."}
       />
+      <LanguageToggle compact />
       <TextField
         value={query}
         onChangeText={setQuery}
