@@ -1,8 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/lib/supabase";
+import { reportRuntimeIssue } from "@/services/runtimeLogger";
 import { AnalyticsEvent, AnalyticsEventName } from "@/types";
 
 const ANALYTICS_QUEUE_KEY = "hudumaguide-tz-analytics-events";
+const ANALYTICS_PENDING_SYNC_KEY = "hudumaguide-tz-analytics-pending-sync";
+const ANALYTICS_BACKOFF_MS = [0, 30_000, 120_000, 600_000];
 
 type AnalyticsPayload = Record<string, string | number | boolean | string[] | undefined>;
 
@@ -32,7 +35,7 @@ function sanitizePayload(payload: AnalyticsPayload) {
     }
 
     if (key === "query" && typeof value === "string") {
-      acc[key] = value.toLowerCase().trim().slice(0, 48);
+      acc[key] = redactFreeText(value.toLowerCase().trim()).slice(0, 48);
       return acc;
     }
 
@@ -51,23 +54,78 @@ export async function trackAnalyticsEvent(name: AnalyticsEventName, payload: Ana
   };
 
   await appendLocalEvent(event);
+  await appendPendingEvent(event, userId);
 
   if (!supabase) {
     return;
   }
 
-  await supabase.from("analytics_events").insert({
-    user_id: userId ?? null,
-    event_name: event.name,
-    event_count: event.count,
-    payload: event.payload,
-    occurred_at: event.createdAt
-  });
+  await flushQueuedAnalyticsEvents();
 }
 
 export async function getLocalAnalyticsEvents() {
   const value = await AsyncStorage.getItem(ANALYTICS_QUEUE_KEY);
   return value ? (JSON.parse(value) as AnalyticsEvent[]) : [];
+}
+
+export async function getPendingAnalyticsEvents() {
+  const value = await AsyncStorage.getItem(ANALYTICS_PENDING_SYNC_KEY);
+  return value ? (JSON.parse(value) as PendingAnalyticsEvent[]) : [];
+}
+
+export async function flushQueuedAnalyticsEvents() {
+  if (!supabase) {
+    return;
+  }
+
+  const pending = await getPendingAnalyticsEvents();
+  const now = Date.now();
+  const ready = pending.filter((item) => !item.nextAttemptAt || new Date(item.nextAttemptAt).getTime() <= now);
+  if (!ready.length) {
+    return;
+  }
+
+  const rows = ready.map((item) => ({
+    user_id: item.userId ?? null,
+    event_name: item.event.name,
+    event_count: item.event.count,
+    payload: item.event.payload,
+    occurred_at: item.event.createdAt
+  }));
+
+  const { error } = await supabase.from("analytics_events").insert(rows);
+  if (error) {
+    const failedIds = new Set(ready.map((item) => item.event.id));
+    const nextPending = pending.map((item) => {
+      if (!failedIds.has(item.event.id)) {
+        return item;
+      }
+
+      const attempts = item.attempts + 1;
+      const delay = ANALYTICS_BACKOFF_MS[Math.min(attempts, ANALYTICS_BACKOFF_MS.length - 1)];
+      return {
+        ...item,
+        attempts,
+        lastError: error.message,
+        nextAttemptAt: new Date(now + delay).toISOString()
+      };
+    });
+    await AsyncStorage.setItem(ANALYTICS_PENDING_SYNC_KEY, JSON.stringify(nextPending));
+    reportRuntimeIssue("analytics-sync", error, { pendingCount: pending.length, readyCount: ready.length });
+    return;
+  }
+
+  const syncedIds = new Set(ready.map((item) => item.event.id));
+  const remaining = pending.filter((item) => !syncedIds.has(item.event.id));
+  if (remaining.length) {
+    await AsyncStorage.setItem(ANALYTICS_PENDING_SYNC_KEY, JSON.stringify(remaining));
+  } else {
+    await AsyncStorage.removeItem(ANALYTICS_PENDING_SYNC_KEY);
+  }
+}
+
+export async function clearLocalAnalyticsData() {
+  await AsyncStorage.multiRemove([ANALYTICS_QUEUE_KEY, ANALYTICS_PENDING_SYNC_KEY]);
 }
 
 export async function getLocalAnalyticsSummary() {
@@ -119,6 +177,28 @@ function summarizeAnalyticsEvents(events: AnalyticsEvent[]) {
 async function appendLocalEvent(event: AnalyticsEvent) {
   const current = await getLocalAnalyticsEvents();
   await AsyncStorage.setItem(ANALYTICS_QUEUE_KEY, JSON.stringify([event, ...current].slice(0, 500)));
+}
+
+type PendingAnalyticsEvent = {
+  event: AnalyticsEvent;
+  userId?: string;
+  attempts: number;
+  nextAttemptAt?: string;
+  lastError?: string;
+};
+
+async function appendPendingEvent(event: AnalyticsEvent, userId?: string) {
+  const current = await getPendingAnalyticsEvents();
+  const next = [{ event, userId, attempts: 0 }, ...current].slice(0, 500);
+  await AsyncStorage.setItem(ANALYTICS_PENDING_SYNC_KEY, JSON.stringify(next));
+}
+
+function redactFreeText(value: string) {
+  return value
+    .replace(/\b(nida|nin|tin)\s*[:#-]?\s*[a-z0-9-]{4,}\b/gi, "[$1]")
+    .replace(/\b[\w.+-]+@[\w.-]+\.\w+\b/g, "[email]")
+    .replace(/\+?\d[\d\s-]{6,}\d/g, "[number]")
+    .replace(/\b\d{8,}\b/g, "[number]");
 }
 
 function topValues(events: AnalyticsEvent[], name: AnalyticsEventName, key: string) {

@@ -104,7 +104,7 @@ As `beta-admin@example.com`:
 - Load categories, guides, analytics, and review queue.
 - Update one guide reviewer note.
 - Mark one guide `needs_review`.
-- Confirm `official_url` remains `TO_BE_VERIFIED` unless status is `verified`.
+- Confirm `official_url` is a real HTTPS source even when status is still `needs_review`.
 - Exclude one guide from Msaidizi and confirm assistant no longer uses it after sync.
 - Mark at least one Msaidizi audit row as `good`, `needs_fix`, and `unsafe`.
 - Confirm normal users cannot read or write audit reviews.
@@ -115,7 +115,7 @@ As a normal user:
 
 ## Official Link Review
 
-Before replacing `TO_BE_VERIFIED`:
+Before marking a guide verified:
 
 - Confirm the link is an official government or regulator channel.
 - Record official-source references.

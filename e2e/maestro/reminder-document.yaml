@@ -1,0 +1,16 @@
+appId: com.hudumaguide.tz
+---
+- launchApp
+- tapOn: "Ruka"
+- tapOn: "Reminders"
+- tapOn: "Create reminder"
+- tapOn: "Title"
+- inputText: "TRA renewal"
+- tapOn: "Save reminder"
+- assertVisible: "TRA renewal"
+- tapOn: "Docs"
+- tapOn: "Add document"
+- tapOn: "Title"
+- inputText: "NIDA copy"
+- tapOn: "Save document record"
+- assertVisible: "NIDA copy"

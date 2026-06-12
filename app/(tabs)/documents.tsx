@@ -13,12 +13,13 @@ import { Pill } from "@/components/Pill";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SyncBanner } from "@/components/SyncBanner";
+import { documentUploadConfig } from "@/config/uploads";
 import { colors, spacing } from "@/constants/theme";
 import { documentFolders } from "@/data/documentFolders";
 import { deleteDocumentFile, openDocumentFile, pickDocumentFile, uploadDocumentFile } from "@/services/documentStorageService";
 import { useAppStore } from "@/store/useAppStore";
 import { DocumentFolder } from "@/types";
-import { getDocumentStatus, getExpiringDocuments } from "@/utils/documents";
+import { getDocumentNextAction, getDocumentStatus, getExpiringDocuments } from "@/utils/documents";
 
 export default function DocumentsScreen() {
   const [selectedFolder, setSelectedFolder] = useState<DocumentFolder | "All">("All");
@@ -38,6 +39,9 @@ export default function DocumentsScreen() {
 
   const expiringSoon = getExpiringDocuments(documents);
   const expiredCount = documents.filter((document) => getDocumentStatus(document).tone === "danger").length;
+  const fileBackedRecords = documents.filter((document) => document.fileName).length;
+  const storageCleanupQueue = documents.filter((document) => document.fileName && !userProfile).length;
+  const allowedFileTypes = Object.values(documentUploadConfig.allowedFileTypes).map((type) => type.toUpperCase()).join(", ");
 
   return (
     <Screen>
@@ -64,6 +68,24 @@ export default function DocumentsScreen() {
       </View>
 
       <AppButton title="Add document" icon="add-circle-outline" onPress={() => router.push("/documents/upload")} />
+      {documents.length ? (
+        <InfoBanner title="Next document action" body={getDocumentNextAction(documents[0])} />
+      ) : null}
+
+      <AppCard>
+        <AppText variant="h3">Vault security settings</AppText>
+        <AppText muted>Upload size limit: {formatBytes(documentUploadConfig.maxBytes)}</AppText>
+        <AppText muted>Allowed file types: {allowedFileTypes}</AppText>
+        <AppText muted>Local document metadata: {documents.length} records</AppText>
+        <AppText muted>Private file previews: {fileBackedRecords} storage references</AppText>
+        <AppText muted>Storage cleanup queue: {storageCleanupQueue} local-only references</AppText>
+        <View style={styles.securityActions}>
+          <AppButton title="Add secure document" icon="cloud-upload-outline" variant="secondary" onPress={() => router.push("/documents/upload")} />
+          {documents.length ? (
+            <AppButton title="Delete local metadata" icon="trash-outline" variant="danger" onPress={confirmClearDocumentMetadata} />
+          ) : null}
+        </View>
+      </AppCard>
 
       <View style={styles.folderRow}>
         <Pill label="All" active={selectedFolder === "All"} onPress={() => setSelectedFolder("All")} />
@@ -99,19 +121,23 @@ export default function DocumentsScreen() {
               onOpen={document.fileName ? () => openDocumentFile(document.fileName as string) : undefined}
               onReplaceFile={userProfile ? () => replaceDocumentFile(document) : undefined}
               onDeleteFile={document.fileName ? () => deleteOnlyFile(document) : undefined}
+              onDeleteMetadataOnly={() => deleteMetadataOnly(document)}
               onDelete={() => deleteDocumentRecord(document)}
             />
           ))
         ) : (
-          <EmptyState
-            icon="document-text-outline"
-            title={language === "sw" ? "Hakuna document records" : "No document records"}
-            body={
-              language === "sw"
-                ? "Ongeza record ya document ili ufuatilie expiry na reminders."
-                : "Add a document record to track expiry dates and reminders."
-            }
-          />
+          <>
+            <EmptyState
+              icon="document-text-outline"
+              title={language === "sw" ? "Hakuna document records" : "No document records"}
+              body={
+                language === "sw"
+                  ? "Ongeza record ya document ili ufuatilie expiry na reminders."
+                  : "Add a document record to track expiry dates and reminders."
+              }
+            />
+            <AppButton title="Add first document" icon="add-circle-outline" onPress={() => router.push("/documents/upload")} />
+          </>
         )}
       </View>
     </Screen>
@@ -169,6 +195,39 @@ export default function DocumentsScreen() {
 
     deleteDocument(document.id);
   }
+
+  function deleteMetadataOnly(document: (typeof documents)[number]) {
+    deleteDocument(document.id);
+    if (document.fileName) {
+      Alert.alert(
+        "Metadata deleted",
+        "The local record was removed. The uploaded file reference remains a remote cleanup responsibility when Storage is connected."
+      );
+    }
+  }
+
+  function confirmClearDocumentMetadata() {
+    Alert.alert(
+      "Delete local document metadata",
+      `This removes ${documents.length} document records and linked document reminders from this device. Uploaded files must still be removed from Storage when connected.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete metadata",
+          style: "destructive",
+          onPress: () => documents.forEach((document) => deleteDocument(document.id))
+        }
+      ]
+    );
+  }
+}
+
+function formatBytes(bytes: number) {
+  if (bytes >= 1024 * 1024) {
+    return `${Math.round(bytes / (1024 * 1024))} MB`;
+  }
+
+  return `${Math.round(bytes / 1024)} KB`;
 }
 
 const styles = StyleSheet.create({
@@ -196,5 +255,8 @@ const styles = StyleSheet.create({
   },
   stack: {
     gap: spacing.md
+  },
+  securityActions: {
+    gap: spacing.sm
   }
 });

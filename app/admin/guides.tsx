@@ -10,12 +10,33 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { TextField } from "@/components/TextField";
 import { spacing } from "@/constants/theme";
 import { AdminGuideDraft, getLocalAdminGuides, loadAdminGuides, upsertAdminGuide } from "@/services/adminContentService";
+import { ServiceGuide } from "@/types";
+import { getGuideFreshness } from "@/utils/guideTrust";
+
+type GuideFilter = "all" | "outdated" | "review_soon" | "missing_link" | "missing_change";
 
 export default function AdminGuidesScreen() {
   const [guides, setGuides] = useState<AdminGuideDraft[]>(getLocalAdminGuides());
   const [selected, setSelected] = useState<AdminGuideDraft>(guides[0]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | undefined>();
+  const [filter, setFilter] = useState<GuideFilter>("all");
+  const filteredGuides = guides.filter((guide) => {
+    const freshness = getDraftFreshness(guide);
+    if (filter === "outdated") {
+      return guide.verificationStatus === "outdated" || freshness.label === "Needs review";
+    }
+    if (filter === "review_soon") {
+      return freshness.label === "Review soon";
+    }
+    if (filter === "missing_link") {
+      return !guide.officialUrl?.startsWith("https://") || !guide.officialSourceRefs?.length;
+    }
+    if (filter === "missing_change") {
+      return !guide.reviewerNotes && !guide.officialSourceRefs?.length;
+    }
+    return true;
+  });
 
   useEffect(() => {
     void loadAdminGuides()
@@ -31,10 +52,8 @@ export default function AdminGuidesScreen() {
   }, []);
 
   async function saveGuide() {
-    const officialUrl = selected.verificationStatus === "verified" ? selected.officialUrl : "TO_BE_VERIFIED";
     const next = {
       ...selected,
-      officialUrl,
       published: selected.published && selected.verificationStatus === "verified"
     };
 
@@ -53,19 +72,26 @@ export default function AdminGuidesScreen() {
       <SectionHeader title="Service guide management" subtitle="Verification, publishing, official links, and review notes." />
       <InfoBanner
         title="Official-link rule"
-        body="Keep official_url as TO_BE_VERIFIED until a reviewer marks the guide verified and records official-source references."
+        body="Every guide should keep a real HTTPS official URL plus reviewer-owned source references, even while its status is needs_review."
         tone="warning"
       />
       {isLoading ? <InfoBanner title="Loading remote guides" body="Fetching admin guide records from Supabase." /> : null}
       {loadError ? <InfoBanner title="Remote load issue" body={loadError} tone="warning" /> : null}
 
       <View style={styles.pills}>
-        {guides.map((guide) => (
+        {(["all", "outdated", "review_soon", "missing_link", "missing_change"] as GuideFilter[]).map((item) => (
+          <Pill key={item} label={item} active={filter === item} onPress={() => setFilter(item)} />
+        ))}
+      </View>
+
+      <View style={styles.pills}>
+        {filteredGuides.map((guide) => (
           <Pill key={guide.slug} label={guide.titleEn} active={selected.slug === guide.slug} onPress={() => setSelected(guide)} />
         ))}
       </View>
 
       <AppCard>
+        <InfoBanner title={getDraftFreshness(selected).label} body={`Last verified: ${selected.lastVerifiedAt ?? "not set"}. Review expires: ${selected.expiresReviewAt ?? "not set"}.`} />
         <TextField label="Slug" value={selected.slug} onChangeText={(slug) => setSelected({ ...selected, slug })} />
         <TextField label="English title" value={selected.titleEn} onChangeText={(titleEn) => setSelected({ ...selected, titleEn })} />
         <TextField label="Swahili title" value={selected.titleSw} onChangeText={(titleSw) => setSelected({ ...selected, titleSw })} />
@@ -92,6 +118,7 @@ export default function AdminGuidesScreen() {
         />
         <TextField label="Last verified at" placeholder="2026-05-10" value={selected.lastVerifiedAt} onChangeText={(lastVerifiedAt) => setSelected({ ...selected, lastVerifiedAt })} />
         <TextField label="Review expires at" placeholder="2026-08-10" value={selected.expiresReviewAt} onChangeText={(expiresReviewAt) => setSelected({ ...selected, expiresReviewAt })} />
+        <TextField label="Source last checked by" value={selected.sourceLastCheckedBy} onChangeText={(sourceLastCheckedBy) => setSelected({ ...selected, sourceLastCheckedBy })} />
         <TextField label="Reviewer notes" value={selected.reviewerNotes} onChangeText={(reviewerNotes) => setSelected({ ...selected, reviewerNotes })} multiline />
         <InfoBanner
           title="Msaidizi controls"
@@ -140,3 +167,11 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   }
 });
+
+function getDraftFreshness(guide: AdminGuideDraft) {
+  return getGuideFreshness({
+    lastVerifiedAt: guide.lastVerifiedAt ?? "",
+    expiresReviewAt: guide.expiresReviewAt,
+    verificationStatus: guide.verificationStatus
+  } as ServiceGuide);
+}

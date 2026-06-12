@@ -1,0 +1,13 @@
+appId: com.hudumaguide.tz
+---
+- launchApp
+- tapOn: "Ruka"
+- assertVisible: "HudumaGuide TZ"
+- tapOn: "Services"
+- tapOn: "Search service guides"
+- inputText: "NIDA"
+- assertVisible: "guides found"
+- tapOn: "NIDA"
+- assertVisible: "Key documents"
+- tapOn: "Checklist"
+- assertVisible: "Checklist"

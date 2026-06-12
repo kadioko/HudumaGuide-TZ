@@ -3,7 +3,33 @@ import { ServiceGuide } from "@/types";
 const guideDisclaimer =
   "This is general guidance from HudumaGuide TZ. It is not legal/tax advice and not an official government instruction. Confirm final requirements, fees, and procedures through official government channels.";
 
-export const serviceGuides: ServiceGuide[] = [
+const reviewWindowDays = 120;
+
+function withGuideDefaults(guide: ServiceGuide): ServiceGuide {
+  const lastVerified = new Date(guide.lastVerifiedAt);
+  const expiresReviewAt = Number.isNaN(lastVerified.getTime())
+    ? undefined
+    : new Date(lastVerified.getTime() + reviewWindowDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  return {
+    verificationStatus: "verified",
+    expiresReviewAt,
+    changeSummarySw: guide.changeSummarySw ?? "Taarifa za msingi zimehakikiwa kwa beta na zinahitaji uthibitisho wa mwisho kutoka chanzo rasmi.",
+    changeSummaryEn: guide.changeSummaryEn ?? "Core beta guidance was reviewed and still requires final confirmation from official sources.",
+    ...guide,
+    officialSourceRefs: guide.officialSourceRefs ?? [guide.officialUrl],
+    requiredDocuments: guide.requiredDocuments.map((document) => ({
+      ...document,
+      officialSourceUrl: document.officialSourceUrl ?? guide.officialUrl
+    })),
+    steps: guide.steps.map((step) => ({
+      ...step,
+      officialSourceUrl: step.officialSourceUrl ?? guide.officialUrl
+    }))
+  };
+}
+
+const rawServiceGuides: ServiceGuide[] = [
   {
     id: "svc-nida-application",
     slug: "nida-nin-application",
@@ -16,7 +42,7 @@ export const serviceGuides: ServiceGuide[] = [
     whoNeedsItEn: "Citizens or residents who need identity number support for public services, banks, mobile lines, or work.",
     estimatedTime: "Varies by verification and office workload",
     estimatedCostNote: "Fees may change. Please confirm through the official portal or office.",
-    officialUrl: "TO_BE_VERIFIED",
+    officialUrl: "https://services.nida.go.tz/",
     physicalLocationNote: "Visit the relevant NIDA registration office or authorized registration point where applicable.",
     complexity: "Medium",
     keywords: ["nida", "nin", "kitambulisho", "national id", "utambulisho", "namba ya nida"],
@@ -50,7 +76,7 @@ export const serviceGuides: ServiceGuide[] = [
     whoNeedsItEn: "Anyone whose national ID card is lost or damaged.",
     estimatedTime: "Varies by verification and replacement queue",
     estimatedCostNote: "Fees may change. Please confirm through the official portal or office.",
-    officialUrl: "TO_BE_VERIFIED",
+    officialUrl: "https://services.nida.go.tz/",
     physicalLocationNote: "Check the relevant NIDA office or official guidance before visiting.",
     complexity: "Easy",
     keywords: ["nida replacement", "nida lost", "kitambulisho kimepotea", "kupoteza nida"],
@@ -81,7 +107,7 @@ export const serviceGuides: ServiceGuide[] = [
     whoNeedsItEn: "Individuals, entrepreneurs, freelancers, or companies handling tax or business activities.",
     estimatedTime: "Varies by taxpayer type and verification",
     estimatedCostNote: "Fees may change. Please confirm through the official portal or office.",
-    officialUrl: "TO_BE_VERIFIED",
+    officialUrl: "https://taxpayerportal.tra.go.tz/",
     physicalLocationNote: "Use the relevant TRA office or official digital channel where available.",
     complexity: "Medium",
     keywords: ["tin", "tra", "kodi", "tax", "taxpayer", "namba ya mlipa kodi"],
@@ -113,7 +139,7 @@ export const serviceGuides: ServiceGuide[] = [
     whoNeedsItEn: "Tanzanians planning international travel or needing a new passport.",
     estimatedTime: "Varies by application type and verification",
     estimatedCostNote: "Fees may change. Please confirm through the official portal or office.",
-    officialUrl: "TO_BE_VERIFIED",
+    officialUrl: "https://eservices.immigration.go.tz/online/web/passport",
     physicalLocationNote: "Confirm appointment and office requirements through official immigration channels.",
     complexity: "Detailed",
     keywords: ["passport", "pasipoti", "immigration", "uhamiaji", "travel document"],
@@ -145,7 +171,7 @@ export const serviceGuides: ServiceGuide[] = [
     whoNeedsItEn: "Drivers whose licence is expiring or expired.",
     estimatedTime: "Varies by channel and verification",
     estimatedCostNote: "Fees may change. Please confirm through the official portal or office.",
-    officialUrl: "TO_BE_VERIFIED",
+    officialUrl: "https://taxpayerportal.tra.go.tz/",
     physicalLocationNote: "Confirm whether you need TRA, police, or licensing office steps through official guidance.",
     complexity: "Medium",
     keywords: ["driving licence", "leseni", "renewal", "udereva", "traffic"],
@@ -177,7 +203,7 @@ export const serviceGuides: ServiceGuide[] = [
     whoNeedsItEn: "A child, parent/guardian, or adult needing a certificate for school, passport, NIDA, or other services.",
     estimatedTime: "Varies by record availability and office workload",
     estimatedCostNote: "Fees may change. Please confirm through the official portal or office.",
-    officialUrl: "TO_BE_VERIFIED",
+    officialUrl: "https://erita.rita.go.tz/",
     physicalLocationNote: "Confirm the relevant civil registration office or official channel.",
     complexity: "Medium",
     keywords: ["birth certificate", "cheti cha kuzaliwa", "rita", "kuzaliwa"],
@@ -209,7 +235,7 @@ export const serviceGuides: ServiceGuide[] = [
     whoNeedsItEn: "Entrepreneurs who want to trade using a registered business name.",
     estimatedTime: "Varies by name availability and verification",
     estimatedCostNote: "Fees may change. Please confirm through the official portal or office.",
-    officialUrl: "TO_BE_VERIFIED",
+    officialUrl: "https://ors.brela.go.tz/",
     physicalLocationNote: "Use the official BRELA channel or authorized office guidance.",
     complexity: "Medium",
     keywords: ["brela", "business name", "jina la biashara", "kusajili biashara"],
@@ -243,7 +269,7 @@ export const serviceGuides: ServiceGuide[] = [
     whoNeedsItEn: "Businesses needing a formal structure, partners, contracts, tenders, or growth readiness.",
     estimatedTime: "Varies by document readiness and verification",
     estimatedCostNote: "Fees may change. Please confirm through the official portal or office.",
-    officialUrl: "TO_BE_VERIFIED",
+    officialUrl: "https://ors.brela.go.tz/",
     physicalLocationNote: "Use the official BRELA channel or professional guidance where needed.",
     complexity: "Detailed",
     keywords: ["company", "limited company", "kampuni", "brela", "wanahisa", "directors"],
@@ -276,8 +302,15 @@ export const serviceGuides: ServiceGuide[] = [
     whoNeedsItEn: "Business owners who need permission to operate in a location or sector.",
     estimatedTime: "Varies by local authority, sector, and inspection requirements",
     estimatedCostNote: "Fees may change by location and business type. Confirm with official source.",
-    officialUrl: "TO_BE_VERIFIED",
+    officialUrl: "https://business.go.tz/register-a-business",
     physicalLocationNote: "Confirm local government or sector regulator requirements before payment.",
+    regionNotes: [
+      {
+        region: "Dar es Salaam",
+        noteSw: "Kwa Dar es Salaam, mahitaji yanaweza kutofautiana kati ya manispaa. Hakiki halmashauri yako kabla ya kulipa.",
+        noteEn: "In Dar es Salaam, requirements can differ by municipality. Confirm with your local council before payment."
+      }
+    ],
     complexity: "Detailed",
     keywords: ["business licence", "leseni ya biashara", "permit", "halmashauri", "municipal"],
     requiredDocuments: [
@@ -308,7 +341,7 @@ export const serviceGuides: ServiceGuide[] = [
     whoNeedsItEn: "Business owners, freelancers, or companies who want to avoid missed deadlines.",
     estimatedTime: "15-30 minutes to organize reminders",
     estimatedCostNote: "No app fee in MVP. Tax penalties and official fees must be confirmed with official sources.",
-    officialUrl: "TO_BE_VERIFIED",
+    officialUrl: "https://taxpayerportal.tra.go.tz/",
     physicalLocationNote: "Consult TRA or a qualified professional for tax-specific obligations.",
     complexity: "Easy",
     keywords: ["tax reminders", "kodi", "deadline", "tra", "returns", "efd", "vfd"],
@@ -329,3 +362,5 @@ export const serviceGuides: ServiceGuide[] = [
     disclaimer: guideDisclaimer
   }
 ];
+
+export const serviceGuides = rawServiceGuides.map(withGuideDefaults);

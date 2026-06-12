@@ -23,7 +23,7 @@
 - Smoke test Support & Safety requests for support, privacy, bug, and safety categories
 - Confirm privacy policy and terms are reachable from Profile
 - Confirm every guide displays the independent guide disclaimer
-- Confirm every official URL placeholder is clearly handled as `TO_BE_VERIFIED`
+- Confirm every guide has a real HTTPS official URL before release
 
 ## Supabase Setup
 
@@ -42,7 +42,11 @@
 
 ## Content Review
 
-- Verify official URLs before replacing `TO_BE_VERIFIED`
+- Verify official URLs, official-source references, and reviewer notes before release
+- Run `npm run verify`, `npx expo-doctor`, `npm run smoke:web`, `npm run audit:high`, and `node scripts/validate-build-config.mjs`.
+- Run `npm run seed:lint` and `npm run types:supabase:check`.
+- Against a disposable local Supabase stack, run `npm run supabase:seed:local` and `npm run rls:verify`.
+- For Android preview, run the EAS preview workflow and Maestro smoke flow before sharing a beta build.
 - Verify service steps with official sources or qualified local reviewers
 - Keep fee language as notes, not final amounts
 - Review Swahili wording with Tanzanian users

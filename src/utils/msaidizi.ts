@@ -1,7 +1,7 @@
 import { serviceCategories } from "@/data/serviceCategories";
 import { Language, ServiceGuide } from "@/types";
 import { legalTaxNotice, pick, trustNotice } from "@/utils/copy";
-import { searchGuides } from "@/utils/search";
+import { getGuideBySlug, searchGuides } from "@/utils/search";
 
 export const msaidiziFallback =
   "Sina uhakika. Tafadhali hakiki kupitia tovuti rasmi au ofisi husika.";
@@ -85,6 +85,11 @@ export function answerFromGuideList(question: string, language: Language, guides
   };
 }
 
-export function answerFromApprovedGuides(question: string, language: Language): MsaidiziAnswer {
+export function answerFromApprovedGuides(question: string, language: Language, scopedGuideSlug?: string): MsaidiziAnswer {
+  const scopedGuide = scopedGuideSlug ? getGuideBySlug(scopedGuideSlug) : undefined;
+  if (scopedGuide) {
+    return answerFromGuideList(question, language, [scopedGuide]);
+  }
+
   return answerFromGuideList(question, language, searchGuides(question).slice(0, 3));
 }

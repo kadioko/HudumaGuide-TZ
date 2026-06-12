@@ -31,6 +31,14 @@ const quickActions = [
   { label: "Tax Reminder", slug: "tax-deadline-reminders" }
 ];
 
+const personaPriority: Record<string, string[]> = {
+  business_owner: ["business-name-registration", "limited-company-registration", "business-licence-application", "tin-registration"],
+  driver: ["driving-licence-renewal", "nida-nin-application"],
+  student: ["birth-certificate-application", "nida-nin-application", "passport-application"],
+  family_admin: ["birth-certificate-application", "nida-nin-application", "passport-application"],
+  citizen: ["nida-nin-application", "tin-registration", "passport-application"]
+};
+
 export default function HomeScreen() {
   const [query, setQuery] = useState("");
   const language = useAppStore((state) => state.language);
@@ -40,6 +48,7 @@ export default function HomeScreen() {
   const reminders = useAppStore((state) => state.reminders);
   const userDocuments = useAppStore((state) => state.userDocuments);
   const businessPlans = useAppStore((state) => state.businessPlans);
+  const onboardingPersona = useAppStore((state) => state.onboardingPersona);
 
   const results = useMemo(() => searchGuides(query).slice(0, 3), [query]);
   const savedGuides = serviceGuides.filter((guide) => savedGuideSlugs.includes(guide.slug)).slice(0, 2);
@@ -52,6 +61,10 @@ export default function HomeScreen() {
   const planProgress = latestPlan ? `${latestPlan.completedStepIds.length}/${latestPlan.roadmap.length}` : null;
   const completedChecklistItems = Object.values(checklistItemsByGuide).reduce((total, items) => total + items.length, 0);
   const expiringDocuments = getExpiringDocuments(userDocuments);
+  const prioritizedQuickActions = useMemo(() => {
+    const priority = personaPriority[onboardingPersona ?? "citizen"] ?? [];
+    return [...quickActions].sort((a, b) => priority.indexOf(b.slug) - priority.indexOf(a.slug));
+  }, [onboardingPersona]);
 
   return (
     <Screen>
@@ -140,7 +153,7 @@ export default function HomeScreen() {
       </AppCard>
 
       <View style={styles.quickGrid}>
-        {quickActions.map((action) => (
+          {prioritizedQuickActions.map((action) => (
           <Pressable
             key={action.slug}
             accessibilityRole="button"

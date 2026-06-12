@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { router } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { AppText } from "@/components/AppText";
 import { EmptyState } from "@/components/EmptyState";
+import { AppButton } from "@/components/AppButton";
 import { Pill } from "@/components/Pill";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -87,11 +89,21 @@ export default function ServicesScreen() {
         {results.length ? (
           results.map((guide) => <ServiceCard key={guide.id} guide={guide} language={language} />)
         ) : (
-          <EmptyState
-            icon="search-outline"
-            title={language === "sw" ? "Hakuna matokeo" : "No results"}
-            body={language === "sw" ? "Jaribu neno kama NIDA, TIN, leseni au BRELA." : "Try NIDA, TIN, licence, or BRELA."}
-          />
+          <>
+            <EmptyState
+              icon="search-outline"
+              title={language === "sw" ? "Hakuna matokeo" : "No results"}
+              body={language === "sw" ? "Jaribu neno kama NIDA, TIN, leseni au BRELA." : "Try NIDA, TIN, licence, or BRELA."}
+            />
+            {query.trim().length >= 2 ? (
+              <AppButton
+                title={language === "sw" ? "Pendekeza guide hii" : "Suggest this guide"}
+                icon="flag-outline"
+                variant="secondary"
+                onPress={() => router.push({ pathname: "/feedback", params: { serviceSlug: `missing:${query.trim()}` } })}
+              />
+            ) : null}
+          </>
         )}
       </View>
     </Screen>

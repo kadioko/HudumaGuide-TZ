@@ -5,23 +5,28 @@ import { getCurrentSession, loadRemoteUserData, saveRemoteUserData, signOut, upd
 import { trackAnalyticsEvent } from "@/services/analyticsService";
 import { cachePublishedGuides } from "@/services/offlineGuideService";
 import { defaultNotificationPreferences } from "@/services/reminderService";
+import { reportRuntimeIssue } from "@/services/runtimeLogger";
+import { migratePersistedState, STORE_VERSION, VersionedPersistedState } from "@/store/persistedState";
 import {
   BusinessPlan,
   FeedbackReport,
   Language,
   NotificationPreferences,
   OfflineGuideCacheMeta,
+  OnboardingPersona,
   Reminder,
   SecurityPreferences,
+  SyncDomain,
   SyncQueueItem,
   SyncStatus,
   UserDocument,
   UserProfile
 } from "@/types";
+import { ChecklistState, getSyncConflictReasons, mergeRemoteWithLocal, upsertSyncQueueItem } from "@/utils/syncMerge";
 
-type ChecklistState = Record<string, string[]>;
 const STORAGE_KEY = "hudumaguide-tz-store";
 const SYNC_DEBOUNCE_MS = 900;
+const canUseDeviceStorage = typeof window !== "undefined";
 
 type AppState = {
   isHydrated: boolean;
@@ -36,7 +41,9 @@ type AppState = {
   securityPreferences: SecurityPreferences;
   userProfile?: UserProfile;
   hasCompletedOnboarding: boolean;
+  onboardingPersona?: OnboardingPersona;
   language: Language;
+  screenLanguages: Record<string, Language>;
   savedGuideSlugs: string[];
   checklistItemsByGuide: ChecklistState;
   recentGuideSlugs: string[];
@@ -50,6 +57,7 @@ type AppState = {
   refreshRemoteData: () => Promise<void>;
   syncNow: () => Promise<void>;
   retryQueuedSync: () => Promise<void>;
+  resolveSyncQueueItem: (id: string) => void;
   logout: () => Promise<void>;
   updateUserProfile: (profile: UserProfile) => Promise<void>;
   setLowDataMode: (enabled: boolean) => void;
@@ -57,8 +65,9 @@ type AppState = {
   updateSecurityPreferences: (preferences: SecurityPreferences) => void;
   refreshOfflineGuideCache: () => Promise<void>;
   clearUserData: () => void;
-  completeOnboarding: () => void;
+  completeOnboarding: (persona?: OnboardingPersona) => void;
   setLanguage: (language: Language) => void;
+  setScreenLanguage: (screenKey: string, language: Language) => void;
   saveGuide: (slug: string) => void;
   unsaveGuide: (slug: string) => void;
   toggleGuideSaved: (slug: string) => void;
@@ -88,17 +97,22 @@ type PersistedState = Pick<
   | "notificationPreferences"
   | "securityPreferences"
   | "hasCompletedOnboarding"
+  | "onboardingPersona"
   | "savedGuideSlugs"
+  | "screenLanguages"
   | "checklistItemsByGuide"
   | "recentGuideSlugs"
   | "reminders"
   | "userDocuments"
   | "businessPlans"
   | "feedbackReports"
->;
+> & {
+  schemaVersion: number;
+};
 
 function getPersistedState(state: AppState): PersistedState {
   return {
+    schemaVersion: STORE_VERSION,
     language: state.language,
     userProfile: state.userProfile,
     syncQueue: state.syncQueue,
@@ -108,7 +122,9 @@ function getPersistedState(state: AppState): PersistedState {
     notificationPreferences: state.notificationPreferences,
     securityPreferences: state.securityPreferences,
     hasCompletedOnboarding: state.hasCompletedOnboarding,
+    onboardingPersona: state.onboardingPersona,
     savedGuideSlugs: state.savedGuideSlugs,
+    screenLanguages: state.screenLanguages,
     checklistItemsByGuide: state.checklistItemsByGuide,
     recentGuideSlugs: state.recentGuideSlugs,
     reminders: state.reminders,
@@ -131,7 +147,9 @@ export const useAppStore = create<AppState>()((set, get) => ({
   securityPreferences: { biometricLockEnabled: false },
   userProfile: undefined,
   hasCompletedOnboarding: false,
+  onboardingPersona: undefined,
   language: "sw",
+  screenLanguages: {},
   savedGuideSlugs: [],
   checklistItemsByGuide: {},
   recentGuideSlugs: [],
@@ -154,7 +172,10 @@ export const useAppStore = create<AppState>()((set, get) => ({
       }
 
       const remote = await loadRemoteUserData(session.user.id, session.user.email, get().language);
-      const merged = mergeRemoteWithLocal(remote, get());
+      const currentState = get();
+      const merged = mergeRemoteWithLocal(remote, currentState);
+      const conflictReasons = getSyncConflictReasons(remote, currentState);
+      const now = new Date().toISOString();
       set({
         userProfile: remote.profile,
         language: remote.profile.preferredLanguage,
@@ -166,8 +187,14 @@ export const useAppStore = create<AppState>()((set, get) => ({
         authLoading: false,
         syncStatus: "synced",
         syncError: undefined,
-        lastRemoteSyncAt: new Date().toISOString(),
-        syncQueue: [],
+        lastRemoteSyncAt: now,
+        syncQueue: conflictReasons.map((reason, index) => ({
+          id: `conflict-${Date.now()}-${index}`,
+          reason,
+          queuedAt: now,
+          attempts: 0,
+          domains: getSyncDomainsFromReason(reason)
+        })),
         feedbackReports: merged.feedbackReports
       });
 
@@ -187,6 +214,12 @@ export const useAppStore = create<AppState>()((set, get) => ({
   retryQueuedSync: async () => {
     await syncRemoteState();
   },
+  resolveSyncQueueItem: (id) =>
+    set((state) => ({
+      syncQueue: state.syncQueue.filter((item) => item.id !== id),
+      syncError: state.syncQueue.length <= 1 ? undefined : state.syncError,
+      syncStatus: state.syncQueue.length <= 1 ? "local" : state.syncStatus
+    })),
   logout: async () => {
     if (isSupabaseConfigured) {
       await signOut();
@@ -229,7 +262,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
       syncStatus: "local",
       syncError: undefined
     }),
-  completeOnboarding: () => set({ hasCompletedOnboarding: true }),
+  completeOnboarding: (onboardingPersona) => set({ hasCompletedOnboarding: true, onboardingPersona }),
   setLanguage: (language) =>
     set((state) => {
       void trackAnalyticsEvent("language_changed", { language }, state.userProfile?.id);
@@ -238,6 +271,13 @@ export const useAppStore = create<AppState>()((set, get) => ({
         userProfile: state.userProfile ? { ...state.userProfile, preferredLanguage: language } : state.userProfile
       };
     }),
+  setScreenLanguage: (screenKey, language) =>
+    set((state) => ({
+      screenLanguages: {
+        ...state.screenLanguages,
+        [screenKey]: language
+      }
+    })),
   saveGuide: (slug) =>
     set((state) => {
       const savedGuideSlugs = state.savedGuideSlugs.includes(slug) ? state.savedGuideSlugs : [slug, ...state.savedGuideSlugs];
@@ -374,30 +414,37 @@ export const useAppStore = create<AppState>()((set, get) => ({
 
 let isHydrating = true;
 
-AsyncStorage.getItem(STORAGE_KEY)
-  .then((value) => {
-    if (value) {
-      useAppStore.setState(JSON.parse(value) as Partial<AppState>);
-    }
-  })
-  .finally(() => {
-    isHydrating = false;
-    useAppStore.setState({ isHydrated: true });
-    void useAppStore.getState().refreshOfflineGuideCache();
-    void useAppStore.getState().hydrateSession();
-  })
-  .catch(() => {
-    isHydrating = false;
-    useAppStore.setState({ isHydrated: true });
-    void useAppStore.getState().refreshOfflineGuideCache();
-  });
+if (canUseDeviceStorage) {
+  AsyncStorage.getItem(STORAGE_KEY)
+    .then((value) => {
+      if (value) {
+        useAppStore.setState(migratePersistedState(JSON.parse(value) as VersionedPersistedState) as Partial<AppState>);
+      }
+    })
+    .finally(() => {
+      isHydrating = false;
+      useAppStore.setState({ isHydrated: true });
+      void useAppStore.getState().refreshOfflineGuideCache();
+      void useAppStore.getState().hydrateSession();
+    })
+    .catch(() => {
+      isHydrating = false;
+      useAppStore.setState({ isHydrated: true });
+      void useAppStore.getState().refreshOfflineGuideCache();
+    });
+} else {
+  isHydrating = false;
+  useAppStore.setState({ isHydrated: true });
+}
 
 useAppStore.subscribe((state) => {
   if (isHydrating) {
     return;
   }
 
-  void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(getPersistedState(state)));
+  if (canUseDeviceStorage) {
+    void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(getPersistedState(state)));
+  }
   const nextPayload = getRemotePayloadKey(state);
   if (nextPayload !== lastRemotePayloadKey) {
     lastRemotePayloadKey = nextPayload;
@@ -447,6 +494,7 @@ async function syncRemoteState() {
     useAppStore.setState({ syncStatus: "synced", syncError: undefined, syncQueue: [], lastRemoteSyncAt: new Date().toISOString() });
   } catch (error) {
     const message = getErrorMessage(error);
+    reportRuntimeIssue("remote-sync", error, { queueLength: state.syncQueue.length });
     useAppStore.setState((current) => ({
       syncStatus: "error",
       syncError: message,
@@ -455,77 +503,6 @@ async function syncRemoteState() {
   } finally {
     isSyncingRemote = false;
   }
-}
-
-function upsertSyncQueueItem(queue: SyncQueueItem[], error: string) {
-  const current = queue[0];
-  if (current) {
-    return [{ ...current, attempts: current.attempts + 1, lastError: error }, ...queue.slice(1)];
-  }
-
-  return [
-    {
-      id: `sync-${Date.now()}`,
-      reason: "Save latest local changes",
-      queuedAt: new Date().toISOString(),
-      attempts: 1,
-      lastError: error
-    }
-  ];
-}
-
-function mergeRemoteWithLocal(remote: {
-  savedGuideSlugs: string[];
-  checklistItemsByGuide: ChecklistState;
-  reminders: Reminder[];
-  userDocuments: UserDocument[];
-  businessPlans: BusinessPlan[];
-  feedbackReports: FeedbackReport[];
-}, local: AppState) {
-  return {
-    savedGuideSlugs: Array.from(new Set([...local.savedGuideSlugs, ...remote.savedGuideSlugs])),
-    checklistItemsByGuide: mergeChecklistState(local.checklistItemsByGuide, remote.checklistItemsByGuide),
-    reminders: mergeByUpdatedAt(local.reminders, remote.reminders),
-    userDocuments: mergeByUpdatedAt(local.userDocuments, remote.userDocuments),
-    businessPlans: mergeByUpdatedAt(local.businessPlans, remote.businessPlans),
-    feedbackReports: mergeByCreatedAt(local.feedbackReports, remote.feedbackReports)
-  };
-}
-
-function mergeChecklistState(local: ChecklistState, remote: ChecklistState) {
-  const keys = Array.from(new Set([...Object.keys(local), ...Object.keys(remote)]));
-  return keys.reduce<ChecklistState>((acc, key) => {
-    acc[key] = Array.from(new Set([...(local[key] ?? []), ...(remote[key] ?? [])]));
-    return acc;
-  }, {});
-}
-
-function mergeByUpdatedAt<T extends { id: string; createdAt?: string; updatedAt?: string }>(localItems: T[], remoteItems: T[]) {
-  const items = new Map<string, T>();
-  for (const item of [...remoteItems, ...localItems]) {
-    const current = items.get(item.id);
-    if (!current) {
-      items.set(item.id, item);
-      continue;
-    }
-
-    const currentTime = new Date(current.updatedAt ?? current.createdAt ?? 0).getTime();
-    const nextTime = new Date(item.updatedAt ?? item.createdAt ?? 0).getTime();
-    if (nextTime >= currentTime) {
-      items.set(item.id, item);
-    }
-  }
-
-  return Array.from(items.values());
-}
-
-function mergeByCreatedAt<T extends { id: string; createdAt?: string }>(localItems: T[], remoteItems: T[]) {
-  const items = new Map<string, T>();
-  for (const item of [...remoteItems, ...localItems]) {
-    items.set(item.id, item);
-  }
-
-  return Array.from(items.values()).sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
 }
 
 function getErrorMessage(error: unknown) {
@@ -547,4 +524,25 @@ function getRemotePayloadKey(state: AppState) {
     businessPlans: state.businessPlans,
     feedbackReports: state.feedbackReports
   });
+}
+
+function getSyncDomainsFromReason(reason: string): SyncDomain[] {
+  const lower = reason.toLowerCase();
+  if (lower.includes("reminder")) {
+    return ["reminders"];
+  }
+  if (lower.includes("document")) {
+    return ["documents"];
+  }
+  if (lower.includes("business")) {
+    return ["business_plans"];
+  }
+  if (lower.includes("checklist")) {
+    return ["checklists"];
+  }
+  if (lower.includes("guide")) {
+    return ["saved_guides"];
+  }
+
+  return ["saved_guides", "checklists", "reminders", "documents", "business_plans"];
 }

@@ -109,11 +109,14 @@ export default function RemindersScreen() {
             </AppCard>
           ))
         ) : (
-          <EmptyState
-            icon="alarm-outline"
-            title={language === "sw" ? "Hakuna reminders hapa" : "No reminders here"}
-            body={language === "sw" ? "Badilisha filter au weka reminder kwa deadline, renewal au follow-up." : "Change the filter or create reminders for deadlines, renewals, or follow-ups."}
-          />
+          <>
+            <EmptyState
+              icon="alarm-outline"
+              title={language === "sw" ? "Hakuna reminders hapa" : "No reminders here"}
+              body={language === "sw" ? "Badilisha filter au weka reminder kwa deadline, renewal au follow-up." : "Change the filter or create reminders for deadlines, renewals, or follow-ups."}
+            />
+            <AppButton title="Create first reminder" icon="add-circle-outline" onPress={() => router.push("/reminders/create")} />
+          </>
         )}
       </View>
     </Screen>

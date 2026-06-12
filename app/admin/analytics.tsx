@@ -12,11 +12,15 @@ import { getLocalAnalyticsSummary, getRemoteAnalyticsSummary } from "@/services/
 import { loadMsaidiziAuditReviews, MsaidiziAuditReview, reviewMsaidiziAudit } from "@/services/adminContentService";
 
 type AnalyticsSummary = Awaited<ReturnType<typeof getLocalAnalyticsSummary>>;
+type AuditStatusFilter = "all" | "unreviewed" | "good" | "needs_fix" | "unsafe";
+type AuditConfidenceFilter = "all" | "grounded" | "fallback";
 
 export default function AdminAnalyticsScreen() {
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [remoteSummary, setRemoteSummary] = useState<AnalyticsSummary | undefined>();
   const [audits, setAudits] = useState<MsaidiziAuditReview[]>([]);
+  const [auditStatusFilter, setAuditStatusFilter] = useState<AuditStatusFilter>("all");
+  const [auditConfidenceFilter, setAuditConfidenceFilter] = useState<AuditConfidenceFilter>("all");
   const [error, setError] = useState<string | undefined>();
 
   useEffect(() => {
@@ -52,6 +56,11 @@ export default function AdminAnalyticsScreen() {
   }
 
   const activeSummary = remoteSummary ?? summary;
+  const filteredAudits = audits.filter((audit) => {
+    const statusMatches = auditStatusFilter === "all" || audit.reviewStatus === auditStatusFilter;
+    const confidenceMatches = auditConfidenceFilter === "all" || audit.confidence === auditConfidenceFilter;
+    return statusMatches && confidenceMatches;
+  });
 
   return (
     <Screen>
@@ -87,8 +96,18 @@ export default function AdminAnalyticsScreen() {
       <AppCard>
         <AppText variant="h3">Msaidizi quality review</AppText>
         <AppText muted>Audit rows exclude raw user questions. Mark answer quality using fallback rate, guide slugs, and question length only.</AppText>
-        {audits.length ? (
-          audits.map((audit) => (
+        <View style={styles.row}>
+          {(["all", "unreviewed", "good", "needs_fix", "unsafe"] as AuditStatusFilter[]).map((status) => (
+            <Pill key={status} label={status} active={auditStatusFilter === status} onPress={() => setAuditStatusFilter(status)} />
+          ))}
+        </View>
+        <View style={styles.row}>
+          {(["all", "grounded", "fallback"] as AuditConfidenceFilter[]).map((confidence) => (
+            <Pill key={confidence} label={confidence} active={auditConfidenceFilter === confidence} onPress={() => setAuditConfidenceFilter(confidence)} />
+          ))}
+        </View>
+        {filteredAudits.length ? (
+          filteredAudits.map((audit) => (
             <View key={audit.id} style={styles.reviewItem}>
               <View style={styles.row}>
                 <Pill label={audit.reviewStatus ?? "unreviewed"} active={audit.reviewStatus !== "good"} />
@@ -106,7 +125,7 @@ export default function AdminAnalyticsScreen() {
             </View>
           ))
         ) : (
-          <AppText muted>No remote Msaidizi audit rows yet.</AppText>
+          <AppText muted>{audits.length ? "No audit rows match the selected filters." : "No remote Msaidizi audit rows yet."}</AppText>
         )}
       </AppCard>
     </Screen>

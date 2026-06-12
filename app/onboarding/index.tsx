@@ -8,6 +8,7 @@ import { AppText } from "@/components/AppText";
 import { Screen } from "@/components/Screen";
 import { colors, spacing } from "@/constants/theme";
 import { useAppStore } from "@/store/useAppStore";
+import { OnboardingPersona } from "@/types";
 
 const slides = [
   {
@@ -27,13 +28,22 @@ const slides = [
   }
 ];
 
+const personas: { value: OnboardingPersona; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { value: "citizen", label: "Citizen", icon: "person-outline" },
+  { value: "student", label: "Student", icon: "school-outline" },
+  { value: "business_owner", label: "Business owner", icon: "briefcase-outline" },
+  { value: "driver", label: "Driver", icon: "car-outline" },
+  { value: "family_admin", label: "Family admin", icon: "people-outline" }
+];
+
 export default function OnboardingScreen() {
   const [index, setIndex] = useState(0);
+  const [persona, setPersona] = useState<OnboardingPersona>("citizen");
   const completeOnboarding = useAppStore((state) => state.completeOnboarding);
   const slide = slides[index];
   const isLast = index === slides.length - 1;
   const finish = () => {
-    completeOnboarding();
+    completeOnboarding(persona);
     router.replace("/(tabs)/home");
   };
 
@@ -61,6 +71,26 @@ export default function OnboardingScreen() {
             {slide.body}
           </AppText>
         </AppCard>
+
+        {isLast ? (
+          <View style={styles.personas}>
+            {personas.map((item) => (
+              <Pressable
+                key={item.value}
+                accessibilityRole="button"
+                accessibilityLabel={item.label}
+                accessibilityState={{ selected: persona === item.value }}
+                onPress={() => setPersona(item.value)}
+                style={[styles.persona, persona === item.value && styles.personaActive]}
+              >
+                <Ionicons name={item.icon} size={18} color={persona === item.value ? colors.surface : colors.green} />
+                <AppText variant="small" color={persona === item.value ? colors.surface : colors.text} style={styles.personaText}>
+                  {item.label}
+                </AppText>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
 
         <View style={styles.dots}>
           {slides.map((item, slideIndex) => (
@@ -124,6 +154,28 @@ const styles = StyleSheet.create({
   },
   center: {
     textAlign: "center"
+  },
+  personas: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm
+  },
+  persona: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 999,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm
+  },
+  personaActive: {
+    backgroundColor: colors.green,
+    borderColor: colors.green
+  },
+  personaText: {
+    fontWeight: "800"
   },
   dots: {
     flexDirection: "row",
