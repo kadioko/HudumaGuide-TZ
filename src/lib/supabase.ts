@@ -4,9 +4,10 @@ import { Database } from "@/types/supabase";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const canUseBrowserClient = typeof window !== "undefined";
 
 export const supabase =
-  supabaseUrl && supabaseAnonKey
+  canUseBrowserClient && supabaseUrl && supabaseAnonKey
     ? createClient<Database>(supabaseUrl, supabaseAnonKey, {
         auth: {
           storage: AsyncStorage,
