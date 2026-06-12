@@ -1,9 +1,7 @@
 import { router } from "expo-router";
 import Constants from "expo-constants";
-import * as LocalAuthentication from "expo-local-authentication";
-import * as Updates from "expo-updates";
 import { useEffect, useState } from "react";
-import { Alert, Share } from "react-native";
+import { Alert, Platform, Share } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
@@ -143,16 +141,14 @@ export default function ProfileScreen() {
   async function exportDiagnostics() {
     const analyticsSummary = await getLocalAnalyticsSummary();
     const state = useAppStore.getState();
+    const updateInfo = await getUpdateInfo();
     await Share.share({
       message: JSON.stringify(
         {
           exportedAt: new Date().toISOString(),
           app: {
             version: Constants.expoConfig?.version,
-            runtimeVersion: Updates.runtimeVersion ?? Constants.expoConfig?.runtimeVersion,
-            updateChannel: Updates.channel ?? "embedded",
-            updateId: Updates.updateId,
-            isEmbeddedLaunch: Updates.isEmbeddedLaunch
+            ...updateInfo
           },
           sync: {
             status: state.syncStatus,
@@ -186,11 +182,17 @@ export default function ProfileScreen() {
   async function checkForUpdate() {
     setIsCheckingUpdate(true);
     try {
-      if (__DEV__) {
-        setUpdateStatus("Updates are checked in production builds.");
+      if (Platform.OS === "web") {
+        setUpdateStatus("Web updates are applied automatically after a Vercel deploy. Refresh the page to load the latest bundle.");
         return;
       }
 
+      if (__DEV__) {
+        setUpdateStatus("Native OTA updates are checked in production builds.");
+        return;
+      }
+
+      const Updates = await import("expo-updates");
       const result = await Updates.checkForUpdateAsync();
       if (!result.isAvailable) {
         setUpdateStatus("No update available.");
@@ -213,11 +215,17 @@ export default function ProfileScreen() {
   }
 
   async function toggleBiometricLock() {
+    if (Platform.OS === "web") {
+      Alert.alert("App lock", "Biometric app lock is available in native Android/iOS builds.");
+      return;
+    }
+
     if (securityPreferences.biometricLockEnabled) {
       updateSecurityPreferences({ biometricLockEnabled: false });
       return;
     }
 
+    const LocalAuthentication = await import("expo-local-authentication");
     const hasHardware = await LocalAuthentication.hasHardwareAsync();
     const enrolled = await LocalAuthentication.isEnrolledAsync();
     if (!hasHardware || !enrolled) {
@@ -291,11 +299,11 @@ export default function ProfileScreen() {
 
       <AppCard>
         <AppText variant="h3">Beta updates</AppText>
-        <AppText muted>Runtime: {String(Updates.runtimeVersion ?? Constants.expoConfig?.runtimeVersion ?? "appVersion")}</AppText>
-        <AppText muted>Channel: {Updates.channel ?? "embedded"}; update: {Updates.updateId ?? "bundled"}</AppText>
+        <AppText muted>Runtime: {getRuntimeLabel()}</AppText>
+        <AppText muted>Channel: {Platform.OS === "web" ? "web" : "native"}; update: {Platform.OS === "web" ? "Vercel bundle" : "native bundle"}</AppText>
         <AppText muted>{updateStatus}</AppText>
         <AppButton title="Check for update" icon="cloud-download-outline" variant="secondary" loading={isCheckingUpdate} onPress={checkForUpdate} />
-        <AppButton title="Restart to apply update" icon="refresh-circle-outline" variant="secondary" onPress={() => void Updates.reloadAsync()} />
+        <AppButton title={Platform.OS === "web" ? "Refresh page" : "Restart to apply update"} icon="refresh-circle-outline" variant="secondary" onPress={() => void reloadApp()} />
       </AppCard>
 
       <AppCard>
@@ -337,5 +345,47 @@ export default function ProfileScreen() {
       <InfoBanner title="Trust notice" body={trustNotice} tone="warning" />
     </Screen>
   );
+}
+
+async function reloadApp() {
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    window.location.reload();
+    return;
+  }
+
+  const Updates = await import("expo-updates");
+  await Updates.reloadAsync();
+}
+
+async function getUpdateInfo() {
+  if (Platform.OS === "web") {
+    return {
+      runtimeVersion: getRuntimeLabel(),
+      updateChannel: "web",
+      updateId: "vercel-static-bundle",
+      isEmbeddedLaunch: true
+    };
+  }
+
+  const Updates = await import("expo-updates");
+  return {
+    runtimeVersion: Updates.runtimeVersion ?? getRuntimeLabel(),
+    updateChannel: Updates.channel ?? "embedded",
+    updateId: Updates.updateId,
+    isEmbeddedLaunch: Updates.isEmbeddedLaunch
+  };
+}
+
+function getRuntimeLabel() {
+  const runtimeVersion = Constants.expoConfig?.runtimeVersion;
+  if (typeof runtimeVersion === "string") {
+    return runtimeVersion;
+  }
+
+  if (runtimeVersion && typeof runtimeVersion === "object" && "policy" in runtimeVersion) {
+    return String(runtimeVersion.policy);
+  }
+
+  return Constants.expoConfig?.version ?? "appVersion";
 }
 
