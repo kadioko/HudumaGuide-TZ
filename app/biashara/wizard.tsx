@@ -186,7 +186,7 @@ export default function BusinessWizardScreen() {
         <Controller control={control} name="needsTaxReminders" render={({ field }) => <BooleanChoice label="Do you need tax reminders?" value={field.value} onChange={field.onChange} />} />
       </AppCard>
 
-      <AppButton title="Generate Business Roadmap" icon="map-outline" onPress={handleSubmit(onSubmit)} />
+      <AppButton title="Generate Business Roadmap" icon="map-outline" onPress={() => void handleSubmit(onSubmit)()} />
     </Screen>
   );
 }

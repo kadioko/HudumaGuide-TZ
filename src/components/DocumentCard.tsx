@@ -3,7 +3,7 @@ import { Alert, StyleSheet, View } from "react-native";
 import { colors, spacing } from "@/constants/theme";
 import { UserDocument } from "@/types";
 import { formatDate } from "@/utils/copy";
-import { getDocumentStatus } from "@/utils/documents";
+import { getDocumentRenewalChecklist, getDocumentStatus } from "@/utils/documents";
 import { AppButton } from "./AppButton";
 import { AppCard } from "./AppCard";
 import { AppText } from "./AppText";
@@ -16,10 +16,12 @@ type DocumentCardProps = {
   onOpen?: () => void;
   onReplaceFile?: () => void;
   onDeleteFile?: () => void;
+  onDeleteMetadataOnly?: () => void;
 };
 
-export function DocumentCard({ document, onDelete, onOpen, onReplaceFile, onDeleteFile }: DocumentCardProps) {
+export function DocumentCard({ document, onDelete, onOpen, onReplaceFile, onDeleteFile, onDeleteMetadataOnly }: DocumentCardProps) {
   const status = getDocumentStatus(document);
+  const renewalChecklist = getDocumentRenewalChecklist(document);
   const toneColor =
     status.tone === "danger"
       ? colors.red
@@ -56,6 +58,14 @@ export function DocumentCard({ document, onDelete, onOpen, onReplaceFile, onDele
       ) : null}
 
       {document.notes ? <AppText muted>{document.notes}</AppText> : null}
+      <View style={styles.renewal}>
+        <AppText variant="small" style={styles.bold}>Renewal checklist</AppText>
+        {renewalChecklist.slice(0, 3).map((item) => (
+          <AppText key={item} variant="small" muted>
+            - {item}
+          </AppText>
+        ))}
+      </View>
       {document.fileName ? (
         <AppText variant="small" color={toneColor}>
           File reference: {document.fileName}
@@ -83,13 +93,32 @@ export function DocumentCard({ document, onDelete, onOpen, onReplaceFile, onDele
           }
         />
       ) : null}
+      {onDeleteMetadataOnly ? (
+        <AppButton
+          title="Delete metadata only"
+          icon="remove-circle-outline"
+          variant="ghost"
+          onPress={() =>
+            Alert.alert(
+              "Delete metadata only",
+              document.fileName
+                ? "Remove the local document record and linked reminders, but leave the uploaded file reference in remote Storage cleanup scope."
+                : "Remove the local document record and linked reminders. No uploaded file reference is attached.",
+              [
+                { text: "Cancel", style: "cancel" },
+                { text: "Delete metadata", style: "destructive", onPress: onDeleteMetadataOnly }
+              ]
+            )
+          }
+        />
+      ) : null}
 
       <AppButton
-        title="Delete"
+        title={document.fileName ? "Delete file and metadata" : "Delete metadata"}
         icon="trash-outline"
         variant="ghost"
         onPress={() =>
-          Alert.alert("Delete document", "Remove this document record and linked reminder?", [
+          Alert.alert("Delete document", document.fileName ? "Remove the uploaded file, document record, and linked reminder?" : "Remove this document record and linked reminder?", [
             { text: "Cancel", style: "cancel" },
             { text: "Delete", style: "destructive", onPress: onDelete }
           ])
@@ -124,6 +153,9 @@ const styles = StyleSheet.create({
   },
   bold: {
     fontWeight: "800"
+  },
+  renewal: {
+    gap: spacing.xs
   },
   actions: {
     flexDirection: "row",

@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, StyleSheet, View } from "react-native";
 import { z } from "zod";
@@ -14,6 +15,7 @@ import { colors, radii, spacing } from "@/constants/theme";
 import { scheduleLocalReminder } from "@/services/reminderService";
 import { useAppStore } from "@/store/useAppStore";
 import { ReminderCategory } from "@/types";
+import { createClientId } from "@/utils/ids";
 
 const categories: { value: ReminderCategory; label: string }[] = [
   { value: "tax", label: "Tax" },
@@ -39,20 +41,26 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function CreateReminderScreen() {
-  const params = useLocalSearchParams<{ title?: string; linkedServiceSlug?: string }>();
+  const params = useLocalSearchParams<{ title?: string; linkedServiceSlug?: string; category?: ReminderCategory; offsetDays?: string }>();
+  const [defaultReminderDate] = useState(() => {
+    const offsetDays = Number(params.offsetDays ?? 7);
+    const safeOffsetDays = Number.isFinite(offsetDays) ? offsetDays : 7;
+    return new Date(Date.now() + safeOffsetDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  });
   const addReminder = useAppStore((state) => state.addReminder);
   const language = useAppStore((state) => state.language);
   const notificationPreferences = useAppStore((state) => state.notificationPreferences);
   const {
     control,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting }
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       title: params.title ? `Follow up: ${params.title}` : "",
-      category: params.linkedServiceSlug ? "service" : "custom",
-      date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      category: params.category ?? (params.linkedServiceSlug ? "service" : "custom"),
+      date: defaultReminderDate,
       repeat: "none",
       preReminderMode: "both",
       notes: "",
@@ -68,7 +76,7 @@ export default function CreateReminderScreen() {
           ? []
           : [Number(values.preReminderMode)];
     const reminder = {
-      id: `reminder-${Date.now()}`,
+      id: createClientId("reminder"),
       title: values.title,
       category: values.category,
       date: values.date,
@@ -97,6 +105,24 @@ export default function CreateReminderScreen() {
         subtitle={language === "sw" ? "Weka deadline, renewal au follow-up." : "Set a deadline, renewal, or follow-up."}
       />
       <InfoBanner body="Dates use YYYY-MM-DD for this MVP. Local notifications require device permission." />
+      <AppCard>
+        <AppText variant="h3">Reminder template</AppText>
+        <View style={styles.choiceGrid}>
+          {[
+            { label: "Deadline day", days: 0 },
+            { label: "7 days before", days: 7 },
+            { label: "30 days before", days: 30 }
+          ].map((item) => (
+            <AppButton
+              key={item.label}
+              title={item.label}
+              icon="calendar-outline"
+              variant="secondary"
+              onPress={() => setValue("date", new Date(Date.now() + item.days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10))}
+            />
+          ))}
+        </View>
+      </AppCard>
 
       <AppCard>
         <Controller

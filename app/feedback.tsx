@@ -10,6 +10,7 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { TextField } from "@/components/TextField";
 import { trackAnalyticsEvent } from "@/services/analyticsService";
 import { useAppStore } from "@/store/useAppStore";
+import { createClientId } from "@/utils/ids";
 
 const schema = z.object({
   message: z.string().min(8, "Please describe what looks outdated")
@@ -33,7 +34,7 @@ export default function FeedbackScreen() {
 
   function onSubmit(values: FormValues) {
     addFeedbackReport({
-      id: `feedback-${Date.now()}`,
+      id: createClientId("feedback"),
       serviceSlug,
       category: "outdated_info",
       message: values.message,

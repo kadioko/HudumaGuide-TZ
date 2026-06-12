@@ -119,7 +119,7 @@ Done:
 - Guide management screen.
 - Review queue screen.
 - Verification status, reviewer notes, official-source references, review expiry, and published workflow fields.
-- Official URL guard: keep `TO_BE_VERIFIED` unless a guide is verified.
+- Official URL guard: keep real HTTPS official URLs plus verification metadata on every guide.
 - Content review checklist for fees, documents, steps, offices, and legal/tax wording.
 - Remote admin list loading with error fallback.
 - Validate `role=admin` RLS with real admin and normal users.
@@ -273,15 +273,40 @@ Priority work:
 - RLS and Storage policy security review.
 - App Store / Play Store metadata.
 
+## Current Upgrade Status
+
+Completed on the SDK 56 x10 branch:
+
+- Expo SDK 56 dependency alignment, app icon/splash assets, `expo-splash-screen`, and `expo-updates` readiness.
+- `npm run verify`, seed-data lint, static web export smoke, Expo Doctor, high/critical audit gate, and build-config validation.
+- Generated Supabase type scripts plus a freshness gate that becomes strict when local/project Supabase access is available.
+- Local Supabase seed fixtures and RLS verification scripts for user-owned reminders, documents, saved guides, checklists, and business plans.
+- Admin trust workflow cards, guide source confidence scoring, content version diff display, Msaidizi audit filters, and storage cleanup surfaces.
+- Document Vault security controls: shared upload size/type config, MIME sniffing, filename/path sanitization, retention choices, renewal checklist guidance, and private Storage wiring.
+- Offline sync review screen with queue visibility and local-field resolution actions.
+- OTA status/check/restart UI and beta diagnostics export.
+- EAS preview workflow and Maestro Android smoke workflow.
+
+Second-layer product polish still pending:
+
+- User-visible step/document-specific issue reporting.
+- Persona and region-aware search ranking in the Services screen.
+- Msaidizi helpful/not-helpful feedback without raw-question logging.
+- Admin missing-source queue grouped by institution.
+- In-app release notes after OTA/app update.
+- Notification permission recovery flow.
+- Full renewal mode that turns expiring documents into a checklist plus reminder.
+- Business roadmap export/share is already present and should be device-tested.
+
 ## Current Critical Blockers
 
-- Migrations `007`, `008`, and `009` have not been pushed because the current Supabase access token returned `401 Unauthorized`.
-- Official links still use `TO_BE_VERIFIED` until verified.
+- Supabase migrations and generated types still need validation against the live project once credentials are available.
+- Official links now use real HTTPS sources, with verification status and reviewer notes tracking confidence.
 - Service guide content needs official-source review before public launch.
 - Physical Android notification validation is still pending.
 - Broader Storage upload UX needs device validation; sampled cross-user denial passed.
 - Account deletion needs live cascade/storage cleanup validation.
-- Admin role behavior passed sampled admin update and normal-user no-effect denial checks, but should be repeated after migration `007`.
+- Admin role behavior and local RLS scripts should be repeated against local Supabase and the live project before beta launch.
 
 ## High-Priority Next Sprint
 
@@ -289,13 +314,13 @@ Sprint goal: prove the connected Supabase beta is safe enough for a small user t
 
 Scope:
 
-1. Provide a fresh Supabase access token or DB password and push migrations `007`, `008`, and `009`.
+1. Provide a fresh Supabase access token or DB password and push pending migrations through `010`.
 2. Re-run `docs/live-beta-validation.md` end to end.
 3. Validate remaining user data isolation for guides, checklists, reminders, documents, and business plans.
 4. Validate document preview/download, replace, delete, and camera capture on Android.
 5. Validate account deletion cascade and Storage cleanup queue.
 6. Validate notifications on a physical Android device.
-7. Review seeded content with Tanzanian reviewers before replacing official-link placeholders.
+7. Review seeded content with Tanzanian reviewers before public beta.
 
 Out of scope:
 
@@ -307,7 +332,7 @@ Out of scope:
 ## Medium-Priority Backlog
 
 - PIN fallback UI beyond device passcode/biometrics.
-- Manual conflict resolution UI.
+- Rich field-level conflict resolution UI beyond the current queue/domain resolver.
 - Regional/local-government filtering where procedures differ.
 - More service guide content and richer FAQ coverage.
 - Onboarding personas: citizen, business owner, student, parent, diaspora, consultant.

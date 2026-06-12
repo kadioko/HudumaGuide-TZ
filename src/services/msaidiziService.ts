@@ -25,8 +25,8 @@ type RemoteGuideRow = {
   disclaimer: string;
 };
 
-export async function answerMsaidizi(question: string, language: Language, userId?: string): Promise<MsaidiziAnswer> {
-  const localAnswer = answerFromApprovedGuides(question, language);
+export async function answerMsaidizi(question: string, language: Language, userId?: string, scopedGuideSlug?: string): Promise<MsaidiziAnswer> {
+  const localAnswer = answerFromApprovedGuides(question, language, scopedGuideSlug);
 
   if (!supabase) {
     await auditMsaidizi(question, localAnswer, userId);
@@ -34,7 +34,7 @@ export async function answerMsaidizi(question: string, language: Language, userI
   }
 
   try {
-    const candidateSlugs = searchGuides(question).slice(0, 5).map((guide) => guide.slug);
+    const candidateSlugs = scopedGuideSlug ? [scopedGuideSlug] : searchGuides(question).slice(0, 5).map((guide) => guide.slug);
     if (!candidateSlugs.length) {
       await auditMsaidizi(question, localAnswer, userId);
       return localAnswer;
@@ -69,14 +69,18 @@ async function auditMsaidizi(question: string, answer: MsaidiziAnswer, userId?: 
     return;
   }
 
-  await supabase.from("msaidizi_audit_logs").insert({
+  await supabase.from("msaidizi_audit_logs").insert(buildMsaidiziAuditLog(question, answer, userId));
+}
+
+export function buildMsaidiziAuditLog(question: string, answer: MsaidiziAnswer, userId?: string) {
+  return {
     user_id: userId ?? null,
     question_hash: hashQuestion(question),
     question_length: question.trim().length,
     confidence: answer.confidence,
     matched_guide_slugs: answer.guides.map((guide) => guide.slug),
     fallback_used: answer.confidence === "fallback"
-  });
+  };
 }
 
 function mapRemoteGuide(row: RemoteGuideRow): ServiceGuide {

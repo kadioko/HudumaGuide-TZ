@@ -1,6 +1,8 @@
 export type Language = "sw" | "en";
+export type OnboardingPersona = "citizen" | "student" | "business_owner" | "driver" | "family_admin";
 
 export type SyncStatus = "local" | "syncing" | "synced" | "error";
+export type SyncDomain = "saved_guides" | "checklists" | "reminders" | "documents" | "business_plans";
 
 export type SyncQueueItem = {
   id: string;
@@ -8,6 +10,7 @@ export type SyncQueueItem = {
   queuedAt: string;
   attempts: number;
   lastError?: string;
+  domains?: SyncDomain[];
 };
 
 export type OfflineGuideCacheMeta = {
@@ -74,6 +77,7 @@ export type ServiceRequiredDocument = {
   titleEn: string;
   noteSw?: string;
   noteEn?: string;
+  officialSourceUrl?: string;
 };
 
 export type ServiceStep = {
@@ -82,6 +86,13 @@ export type ServiceStep = {
   titleEn: string;
   descriptionSw: string;
   descriptionEn: string;
+  officialSourceUrl?: string;
+  reminderTemplate?: {
+    titleSw: string;
+    titleEn: string;
+    category: ReminderCategory;
+    offsetDays?: number;
+  };
 };
 
 export type ServiceFaq = {
@@ -113,9 +124,18 @@ export type ServiceGuide = {
   commonMistakesEn: string[];
   faqs: ServiceFaq[];
   lastVerifiedAt: string;
+  changeSummarySw?: string;
+  changeSummaryEn?: string;
+  regionNotes?: {
+    region: string;
+    city?: string;
+    noteSw: string;
+    noteEn: string;
+  }[];
   expiresReviewAt?: string;
   verificationStatus?: "draft" | "needs_review" | "verified" | "outdated";
   reviewerNotes?: string;
+  sourceLastCheckedBy?: string;
   officialSourceRefs?: string[];
   published?: boolean;
   disclaimer: string;

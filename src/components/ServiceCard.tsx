@@ -5,6 +5,7 @@ import { colors, spacing } from "@/constants/theme";
 import { serviceCategories } from "@/data/serviceCategories";
 import { ServiceGuide, Language } from "@/types";
 import { pick } from "@/utils/copy";
+import { GuideFreshnessBadge } from "./GuideFreshnessBadge";
 import { AppCard } from "./AppCard";
 import { AppText } from "./AppText";
 import { Pill } from "./Pill";
@@ -34,6 +35,7 @@ export function ServiceCard({ guide, language }: ServiceCardProps) {
         <AppText muted>{pick(language, guide.summarySw, guide.summaryEn)}</AppText>
         <View style={styles.footer}>
           <Pill label={guide.complexity} />
+          <GuideFreshnessBadge guide={guide} />
           <Pill label={guide.estimatedTime.split(" ").slice(0, 4).join(" ")} />
           <View style={styles.viewSteps}>
             <AppText variant="small" color={colors.green} style={styles.viewText}>

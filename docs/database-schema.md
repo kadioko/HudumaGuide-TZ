@@ -35,7 +35,7 @@ User-owned tables include `user_id` and RLS policies that restrict access to `au
 
 Fee fields are intentionally phrased as notes, not final amounts.
 
-Official URLs can be `TO_BE_VERIFIED` until checked.
+Official URLs should be real HTTPS links before a guide is published or imported into admin review.
 
 ## Migration
 

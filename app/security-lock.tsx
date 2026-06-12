@@ -41,7 +41,11 @@ export default function SecurityLockScreen() {
   }, [updateSecurityPreferences]);
 
   useEffect(() => {
-    void unlock();
+    const timer = setTimeout(() => {
+      void unlock();
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [unlock]);
 
   return (

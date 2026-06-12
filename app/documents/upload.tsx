@@ -18,6 +18,7 @@ import { captureDocumentImage, pickDocumentFile, PickedDocumentFile, uploadDocum
 import { scheduleLocalReminder } from "@/services/reminderService";
 import { useAppStore } from "@/store/useAppStore";
 import { DocumentFolder, Reminder } from "@/types";
+import { createClientId } from "@/utils/ids";
 
 const dateField = z
   .string()
@@ -88,7 +89,7 @@ export default function UploadDocumentScreen() {
 
   async function onSubmit(values: FormValues) {
     const now = new Date().toISOString();
-    const documentId = `document-${Date.now()}`;
+    const documentId = createClientId("document");
     let storagePath = values.fileName || undefined;
 
     if (pickedFile) {
@@ -124,7 +125,7 @@ export default function UploadDocumentScreen() {
 
     if (values.reminderOn) {
       const reminder: Reminder = {
-        id: `reminder-${Date.now()}`,
+        id: createClientId("reminder"),
         title: `Document reminder: ${values.title}`,
         category: "document",
         date: values.reminderOn,

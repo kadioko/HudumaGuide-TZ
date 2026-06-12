@@ -1,5 +1,7 @@
 import { router } from "expo-router";
+import Constants from "expo-constants";
 import * as LocalAuthentication from "expo-local-authentication";
+import * as Updates from "expo-updates";
 import { useEffect, useState } from "react";
 import { Alert, Share, StyleSheet, View } from "react-native";
 import { AppButton } from "@/components/AppButton";
@@ -12,7 +14,8 @@ import { TextField } from "@/components/TextField";
 import { spacing } from "@/constants/theme";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { deleteAccountAndData, exportRemoteUserData } from "@/services/accountService";
-import { trackAnalyticsEvent } from "@/services/analyticsService";
+import { clearLocalAnalyticsData, getLocalAnalyticsSummary, trackAnalyticsEvent } from "@/services/analyticsService";
+import { getRuntimeIssueLog } from "@/services/runtimeLogger";
 import { useAppStore } from "@/store/useAppStore";
 import { trustNotice } from "@/utils/copy";
 
@@ -50,11 +53,17 @@ export default function ProfileScreen() {
   const [fullName, setFullName] = useState(userProfile?.fullName ?? "");
   const [region, setRegion] = useState(userProfile?.region ?? "");
   const [city, setCity] = useState(userProfile?.city ?? "");
+  const [updateStatus, setUpdateStatus] = useState("Not checked");
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
 
   useEffect(() => {
-    setFullName(userProfile?.fullName ?? "");
-    setRegion(userProfile?.region ?? "");
-    setCity(userProfile?.city ?? "");
+    const timer = setTimeout(() => {
+      setFullName(userProfile?.fullName ?? "");
+      setRegion(userProfile?.region ?? "");
+      setCity(userProfile?.city ?? "");
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [userProfile]);
 
   async function saveProfile() {
@@ -80,10 +89,24 @@ export default function ProfileScreen() {
   }
 
   async function exportData() {
+    const analyticsSummary = await getLocalAnalyticsSummary();
+    const privacyMetadata = {
+      exportedAt: new Date().toISOString(),
+      sync: {
+        status: syncStatus,
+        pendingQueueCount: syncQueue.length,
+        queue: syncQueue,
+        lastError: syncError,
+        lastRemoteSyncAt: useAppStore.getState().lastRemoteSyncAt
+      },
+      analytics: analyticsSummary,
+      runtimeIssues: getRuntimeIssueLog(),
+      offlineGuideCache
+    };
     const payload =
       userProfile && isSupabaseConfigured
-        ? await exportRemoteUserData(userProfile.id, localData)
-        : { exportedAt: new Date().toISOString(), source: "HudumaGuide TZ", localData };
+        ? { ...(await exportRemoteUserData(userProfile.id, localData)), privacyMetadata }
+        : { exportedAt: privacyMetadata.exportedAt, source: "HudumaGuide TZ", localData, privacyMetadata };
 
     await Share.share({
       message: JSON.stringify(payload, null, 2)
@@ -94,8 +117,8 @@ export default function ProfileScreen() {
     Alert.alert(
       "Delete account data",
       userProfile
-        ? "This removes your Supabase account and app data. This cannot be undone."
-        : "This clears local app data on this device. This cannot be undone.",
+        ? "This removes your Supabase account plus saved guides, checklists, reminders, document metadata, business plans, feedback reports, sync queue, and local analytics on this device. This cannot be undone."
+        : "This clears saved guides, checklists, reminders, document metadata, business plans, feedback reports, sync queue, and local analytics on this device. This cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -107,6 +130,7 @@ export default function ProfileScreen() {
                 await deleteAccountAndData();
               }
               clearUserData();
+              await clearLocalAnalyticsData();
               router.replace("/auth");
             } catch (error) {
               Alert.alert("Delete failed", error instanceof Error ? error.message : "Unable to delete account data.");
@@ -115,6 +139,78 @@ export default function ProfileScreen() {
         }
       ]
     );
+  }
+
+  async function exportDiagnostics() {
+    const analyticsSummary = await getLocalAnalyticsSummary();
+    const state = useAppStore.getState();
+    await Share.share({
+      message: JSON.stringify(
+        {
+          exportedAt: new Date().toISOString(),
+          app: {
+            version: Constants.expoConfig?.version,
+            runtimeVersion: Updates.runtimeVersion ?? Constants.expoConfig?.runtimeVersion,
+            updateChannel: Updates.channel ?? "embedded",
+            updateId: Updates.updateId,
+            isEmbeddedLaunch: Updates.isEmbeddedLaunch
+          },
+          sync: {
+            status: state.syncStatus,
+            error: state.syncError,
+            queueLength: state.syncQueue.length,
+            lastRemoteSyncAt: state.lastRemoteSyncAt
+          },
+          storageCounts: {
+            savedGuides: state.savedGuideSlugs.length,
+            checklistGuides: Object.keys(state.checklistItemsByGuide).length,
+            reminders: state.reminders.length,
+            documents: state.userDocuments.length,
+            documentFileRefs: state.userDocuments.filter((document) => Boolean(document.fileName)).length,
+            businessPlans: state.businessPlans.length,
+            feedbackReports: state.feedbackReports.length
+          },
+          featureFlags: {
+            lowDataMode: state.lowDataMode,
+            biometricLockEnabled: state.securityPreferences.biometricLockEnabled,
+            supabaseConfigured: isSupabaseConfigured
+          },
+          analytics: analyticsSummary,
+          runtimeIssues: getRuntimeIssueLog()
+        },
+        null,
+        2
+      )
+    });
+  }
+
+  async function checkForUpdate() {
+    setIsCheckingUpdate(true);
+    try {
+      if (__DEV__) {
+        setUpdateStatus("Updates are checked in production builds.");
+        return;
+      }
+
+      const result = await Updates.checkForUpdateAsync();
+      if (!result.isAvailable) {
+        setUpdateStatus("No update available.");
+        return;
+      }
+
+      setUpdateStatus("Update available. Downloading...");
+      await Updates.fetchUpdateAsync();
+      setUpdateStatus("Update ready. Restart the app to apply it.");
+    } catch (error) {
+      setUpdateStatus(error instanceof Error ? error.message : "Unable to check for updates.");
+    } finally {
+      setIsCheckingUpdate(false);
+    }
+  }
+
+  async function clearAnalyticsOnly() {
+    await clearLocalAnalyticsData();
+    Alert.alert("Analytics cleared", "Local analytics history and pending analytics sync events were removed from this device.");
   }
 
   async function toggleBiometricLock() {
@@ -179,6 +275,7 @@ export default function ProfileScreen() {
         <AppText muted>Business plans: {businessPlans}</AppText>
         <AppText muted>Pending sync saves: {syncQueue.length}</AppText>
         <AppText muted>Offline guide cache: {offlineGuideCache?.guideCount ?? 0} guides</AppText>
+        <AppButton title="Review sync queue" icon="git-compare-outline" variant="secondary" onPress={() => router.push("/sync-review" as never)} />
       </AppCard>
 
       <AppCard>
@@ -194,6 +291,15 @@ export default function ProfileScreen() {
         />
         <AppButton title="Refresh offline guide cache" icon="download-outline" variant="secondary" onPress={refreshOfflineGuideCache} />
         {syncQueue.length ? <AppButton title="Retry pending sync" icon="refresh-outline" onPress={retryQueuedSync} /> : null}
+      </AppCard>
+
+      <AppCard>
+        <AppText variant="h3">Beta updates</AppText>
+        <AppText muted>Runtime: {String(Updates.runtimeVersion ?? Constants.expoConfig?.runtimeVersion ?? "appVersion")}</AppText>
+        <AppText muted>Channel: {Updates.channel ?? "embedded"}; update: {Updates.updateId ?? "bundled"}</AppText>
+        <AppText muted>{updateStatus}</AppText>
+        <AppButton title="Check for update" icon="cloud-download-outline" variant="secondary" loading={isCheckingUpdate} onPress={checkForUpdate} />
+        <AppButton title="Restart to apply update" icon="refresh-circle-outline" variant="secondary" onPress={() => void Updates.reloadAsync()} />
       </AppCard>
 
       <AppCard>
@@ -223,8 +329,10 @@ export default function ProfileScreen() {
         <AppButton title="Account / login" icon="person-circle-outline" variant="secondary" onPress={() => router.push("/auth")} />
       )}
       <AppButton title="Export my data" icon="download-outline" variant="secondary" onPress={exportData} />
+      <AppButton title="Export beta diagnostics" icon="bug-outline" variant="secondary" onPress={exportDiagnostics} />
       <AppButton title="Beta readiness checklist" icon="clipboard-outline" variant="secondary" onPress={() => router.push("/beta-readiness" as never)} />
       <AppButton title="Support & safety" icon="help-circle-outline" variant="secondary" onPress={() => router.push("/support" as never)} />
+      <AppButton title="Clear local analytics" icon="analytics-outline" variant="secondary" onPress={clearAnalyticsOnly} />
       <AppButton title="Admin content console" icon="shield-checkmark-outline" variant="secondary" onPress={() => router.push("/admin/index")} />
       <AppButton title={userProfile ? "Delete account" : "Clear local data"} icon="trash-outline" variant="danger" onPress={confirmDeleteAccount} />
       <AppButton title="About & disclaimer" icon="information-circle-outline" variant="secondary" onPress={() => router.push("/disclaimer")} />

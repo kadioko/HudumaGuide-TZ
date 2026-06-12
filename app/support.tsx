@@ -16,6 +16,7 @@ import { TextField } from "@/components/TextField";
 import { spacing } from "@/constants/theme";
 import { trackAnalyticsEvent } from "@/services/analyticsService";
 import { useAppStore } from "@/store/useAppStore";
+import { createClientId } from "@/utils/ids";
 
 const supportCategories = ["support", "privacy", "bug", "safety"] as const;
 
@@ -49,7 +50,7 @@ export default function SupportScreen() {
 
   function onSubmit(values: FormValues) {
     addFeedbackReport({
-      id: `support-${Date.now()}`,
+      id: createClientId("support"),
       category,
       message: values.message,
       createdAt: new Date().toISOString()

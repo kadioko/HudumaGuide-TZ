@@ -29,6 +29,7 @@ export type AdminGuideDraft = {
   lastVerifiedAt?: string;
   expiresReviewAt?: string;
   reviewerNotes?: string;
+  sourceLastCheckedBy?: string;
   officialSourceRefs?: string[];
   msaidiziEnabled?: boolean;
   msaidiziExcludedReason?: string;
@@ -51,6 +52,11 @@ export type ContentChangeLog = {
   entityType: string;
   entityId: string;
   action: string;
+  beforeData?: Record<string, unknown>;
+  afterData?: Record<string, unknown>;
+  changedBy?: string;
+  changedGuideSlug?: string;
+  statusTransition?: string;
   createdAt: string;
 };
 
@@ -117,6 +123,7 @@ export function getLocalAdminGuides(): AdminGuideDraft[] {
     lastVerifiedAt: guide.lastVerifiedAt,
     expiresReviewAt: guide.expiresReviewAt,
     reviewerNotes: guide.reviewerNotes,
+    sourceLastCheckedBy: guide.sourceLastCheckedBy,
     officialSourceRefs: guide.officialSourceRefs,
     msaidiziEnabled: true,
     requiredDocumentsJson: JSON.stringify(guide.requiredDocuments, null, 2),
@@ -158,7 +165,7 @@ export async function loadAdminGuides() {
 
   const { data, error } = await supabase
     .from("service_guides")
-    .select("id, slug, category_id, title_en, title_sw, summary_en, summary_sw, official_url, published, verification_status, last_verified_at, expires_review_at, reviewer_notes, official_source_refs, msaidizi_enabled, msaidizi_excluded_reason, required_documents, steps, faqs")
+    .select("id, slug, category_id, title_en, title_sw, summary_en, summary_sw, official_url, published, verification_status, last_verified_at, expires_review_at, reviewer_notes, source_last_checked_by, official_source_refs, msaidizi_enabled, msaidizi_excluded_reason, required_documents, steps, faqs")
     .order("updated_at", { ascending: false });
 
   if (error) {
@@ -179,6 +186,7 @@ export async function loadAdminGuides() {
     lastVerifiedAt: row.last_verified_at ?? undefined,
     expiresReviewAt: row.expires_review_at ?? undefined,
     reviewerNotes: row.reviewer_notes ?? undefined,
+    sourceLastCheckedBy: row.source_last_checked_by ?? undefined,
     officialSourceRefs: Array.isArray(row.official_source_refs) ? row.official_source_refs : [],
     msaidiziEnabled: row.msaidizi_enabled ?? true,
     msaidiziExcludedReason: row.msaidizi_excluded_reason ?? undefined,
@@ -245,12 +253,13 @@ export async function upsertAdminGuide(guide: AdminGuideDraft) {
       title_sw: guide.titleSw,
       summary_en: guide.summaryEn,
       summary_sw: guide.summarySw,
-      official_url: guide.verificationStatus === "verified" ? guide.officialUrl : "TO_BE_VERIFIED",
+      official_url: guide.officialUrl,
       published: guide.published && guide.verificationStatus === "verified",
       verification_status: guide.verificationStatus,
       last_verified_at: guide.lastVerifiedAt || null,
       expires_review_at: guide.expiresReviewAt || null,
       reviewer_notes: guide.reviewerNotes || null,
+      source_last_checked_by: guide.sourceLastCheckedBy || null,
       official_source_refs: guide.officialSourceRefs ?? [],
       msaidizi_enabled: guide.msaidiziEnabled ?? true,
       msaidizi_excluded_reason: guide.msaidiziExcludedReason || null,
@@ -302,7 +311,7 @@ export async function loadContentChangeLogs() {
 
   const { data, error } = await supabase
     .from("content_change_logs")
-    .select("id, entity_type, entity_id, action, created_at")
+    .select("id, entity_type, entity_id, action, before_data, after_data, changed_by, created_at")
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -315,8 +324,38 @@ export async function loadContentChangeLogs() {
     entityType: row.entity_type,
     entityId: row.entity_id,
     action: row.action,
+    beforeData: (row.before_data ?? undefined) as Record<string, unknown> | undefined,
+    afterData: (row.after_data ?? undefined) as Record<string, unknown> | undefined,
+    changedBy: row.changed_by ?? undefined,
+    changedGuideSlug: getChangedGuideSlug(row.before_data, row.after_data),
+    statusTransition: getStatusTransition(row.before_data, row.after_data),
     createdAt: row.created_at
   }));
+}
+
+function getChangedGuideSlug(beforeData?: unknown, afterData?: unknown) {
+  const beforeSlug = getRecordValue(beforeData, "slug");
+  const afterSlug = getRecordValue(afterData, "slug");
+  return afterSlug ?? beforeSlug;
+}
+
+function getStatusTransition(beforeData?: unknown, afterData?: unknown) {
+  const beforeStatus = getRecordValue(beforeData, "verification_status") ?? getRecordValue(beforeData, "verificationStatus");
+  const afterStatus = getRecordValue(afterData, "verification_status") ?? getRecordValue(afterData, "verificationStatus");
+  if (!beforeStatus && !afterStatus) {
+    return undefined;
+  }
+
+  return `${beforeStatus ?? "unset"} -> ${afterStatus ?? "unset"}`;
+}
+
+function getRecordValue(value: unknown, key: string) {
+  if (!value || typeof value !== "object" || !(key in value)) {
+    return undefined;
+  }
+
+  const recordValue = (value as Record<string, unknown>)[key];
+  return typeof recordValue === "string" ? recordValue : undefined;
 }
 
 export async function loadMsaidiziAuditReviews() {

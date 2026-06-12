@@ -12,10 +12,12 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SyncBanner } from "@/components/SyncBanner";
+import { GuideFreshnessBadge } from "@/components/GuideFreshnessBadge";
 import { colors, spacing } from "@/constants/theme";
 import { serviceCategories } from "@/data/serviceCategories";
 import { useAppStore } from "@/store/useAppStore";
 import { legalTaxNotice, pick, trustNotice } from "@/utils/copy";
+import { getGuideFreshness, getGuideSourceConfidence, getRegionNote } from "@/utils/guideTrust";
 import { getGuideProgress } from "@/utils/progress";
 import { getGuideBySlug } from "@/utils/search";
 
@@ -24,12 +26,17 @@ const emptyChecklistItems: string[] = [];
 export default function ServiceDetailsScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const guide = getGuideBySlug(slug);
-  const language = useAppStore((state) => state.language);
+  const globalLanguage = useAppStore((state) => state.language);
+  const screenLanguages = useAppStore((state) => state.screenLanguages);
+  const setScreenLanguage = useAppStore((state) => state.setScreenLanguage);
+  const screenKey = `guide:${slug ?? "unknown"}`;
+  const language = screenLanguages[screenKey] ?? globalLanguage;
   const savedGuideSlugs = useAppStore((state) => state.savedGuideSlugs);
   const checklistItems = useAppStore((state) => state.checklistItemsByGuide[slug ?? ""] ?? emptyChecklistItems);
   const toggleGuideSaved = useAppStore((state) => state.toggleGuideSaved);
   const toggleChecklistItem = useAppStore((state) => state.toggleChecklistItem);
   const addRecentGuide = useAppStore((state) => state.addRecentGuide);
+  const userProfile = useAppStore((state) => state.userProfile);
 
   useEffect(() => {
     if (guide) {
@@ -67,17 +74,41 @@ export default function ServiceDetailsScreen() {
   const selectedGuide = guide;
   const category = serviceCategories.find((item) => item.id === selectedGuide.categoryId);
   const isSaved = savedGuideSlugs.includes(selectedGuide.slug);
+  const freshness = getGuideFreshness(selectedGuide);
+  const sourceConfidence = getGuideSourceConfidence(selectedGuide);
+  const regionNote = getRegionNote(selectedGuide, userProfile?.region, userProfile?.city);
 
   async function openOfficialPortal() {
-    if (selectedGuide.officialUrl === "TO_BE_VERIFIED") {
+    if (!selectedGuide.officialUrl?.startsWith("https://")) {
       Alert.alert(
         "Official link pending",
-        "This guide uses a placeholder official link. Confirm through the relevant official office or portal."
+        "This guide is missing a verified HTTPS official link. Confirm through the relevant official office or portal."
       );
       return;
     }
 
     await Linking.openURL(selectedGuide.officialUrl);
+  }
+
+  async function openSourceUrl(url?: string) {
+    if (!url) {
+      await openOfficialPortal();
+      return;
+    }
+
+    await Linking.openURL(url);
+  }
+
+  function createReminderFromTemplate(stepTitle: string, template: NonNullable<(typeof selectedGuide.steps)[number]["reminderTemplate"]>) {
+    router.push({
+      pathname: "/reminders/create",
+      params: {
+        linkedServiceSlug: selectedGuide.slug,
+        title: pick(language, template.titleSw, template.titleEn) || stepTitle,
+        category: template.category,
+        offsetDays: String(template.offsetDays ?? 7)
+      }
+    });
   }
 
   async function shareGuide() {
@@ -117,11 +148,36 @@ export default function ServiceDetailsScreen() {
     <Screen>
       <View style={styles.header}>
         <Pill label={pick(language, category?.titleSw ?? "", category?.titleEn ?? "")} />
+        <GuideFreshnessBadge guide={selectedGuide} />
+        <View style={styles.inlineActions}>
+          <Pill label="Kiswahili" active={language === "sw"} onPress={() => setScreenLanguage(screenKey, "sw")} />
+          <Pill label="English" active={language === "en"} onPress={() => setScreenLanguage(screenKey, "en")} />
+        </View>
         <AppText variant="title">{pick(language, selectedGuide.titleSw, selectedGuide.titleEn)}</AppText>
         <AppText muted>{pick(language, selectedGuide.summarySw, selectedGuide.summaryEn)}</AppText>
       </View>
 
       <InfoBanner title="Independent guide" body={trustNotice} tone="warning" />
+      <InfoBanner
+        title={`Source confidence: ${sourceConfidence.score}%`}
+        body={`${sourceConfidence.label}. ${sourceConfidence.passed}/${sourceConfidence.total} source checks are complete for this guide.`}
+        tone={sourceConfidence.score >= 85 ? "info" : "warning"}
+      />
+      <InfoBanner
+        title={freshness.label}
+        body={
+          language === "sw"
+            ? `Mwongozo huu ulihakikiwa siku ${freshness.daysSinceVerified} zilizopita. Hakiki hatua za mwisho kupitia chanzo rasmi.`
+            : `This guide was last checked ${freshness.daysSinceVerified} days ago. Confirm final steps through official sources.`
+        }
+        tone={freshness.tone === "danger" ? "warning" : freshness.tone === "warning" ? "warning" : "info"}
+      />
+      {selectedGuide.changeSummaryEn || selectedGuide.changeSummarySw ? (
+        <InfoBanner title={language === "sw" ? "Kilichobadilika" : "What changed"} body={pick(language, selectedGuide.changeSummarySw ?? "", selectedGuide.changeSummaryEn ?? "")} />
+      ) : null}
+      {regionNote ? (
+        <InfoBanner title={language === "sw" ? "Dokezo la eneo lako" : "Local note"} body={pick(language, regionNote.noteSw, regionNote.noteEn)} />
+      ) : null}
       <SyncBanner />
 
       <AppCard>
@@ -171,6 +227,17 @@ export default function ServiceDetailsScreen() {
         variant="secondary"
         onPress={() => router.push(`/services/${selectedGuide.slug}/checklist`)}
       />
+      <AppButton
+        title={language === "sw" ? "Muulize Msaidizi kuhusu guide hii" : "Ask Msaidizi about this guide"}
+        icon="chatbubble-ellipses-outline"
+        variant="secondary"
+        onPress={() =>
+          router.push({
+            pathname: "/msaidizi",
+            params: { guideSlug: selectedGuide.slug, question: pick(language, selectedGuide.titleSw, selectedGuide.titleEn) }
+          })
+        }
+      />
 
       <AppCard>
         <SectionHeader title={language === "sw" ? "Nani anahitaji?" : "Who needs it?"} />
@@ -180,26 +247,40 @@ export default function ServiceDetailsScreen() {
       <AppCard>
         <SectionHeader title={language === "sw" ? "Nyaraka unazohitaji" : "Required documents"} />
         {selectedGuide.requiredDocuments.map((document) => (
-          <ChecklistRow
-            key={document.id}
-            title={pick(language, document.titleSw, document.titleEn)}
-            description={pick(language, document.noteSw ?? "", document.noteEn ?? "") || undefined}
-            checked={checklistItems.includes(`doc-${document.id}`)}
-            onToggle={() => toggleChecklistItem(selectedGuide.slug, `doc-${document.id}`)}
-          />
+          <View key={document.id} style={styles.linkedChecklistItem}>
+            <ChecklistRow
+              title={pick(language, document.titleSw, document.titleEn)}
+              description={pick(language, document.noteSw ?? "", document.noteEn ?? "") || undefined}
+              checked={checklistItems.includes(`doc-${document.id}`)}
+              onToggle={() => toggleChecklistItem(selectedGuide.slug, `doc-${document.id}`)}
+            />
+            <AppButton title={language === "sw" ? "Chanzo rasmi" : "Official source"} icon="open-outline" variant="ghost" onPress={() => openSourceUrl(document.officialSourceUrl)} />
+          </View>
         ))}
       </AppCard>
 
       <AppCard>
         <SectionHeader title={language === "sw" ? "Hatua kwa hatua" : "Step by step"} />
         {selectedGuide.steps.map((step, index) => (
-          <ChecklistRow
-            key={step.id}
-            title={`${language === "sw" ? "Hatua ya" : "Step"} ${index + 1}: ${pick(language, step.titleSw, step.titleEn)}`}
-            description={pick(language, step.descriptionSw, step.descriptionEn)}
-            checked={checklistItems.includes(`step-${step.id}`)}
-            onToggle={() => toggleChecklistItem(selectedGuide.slug, `step-${step.id}`)}
-          />
+          <View key={step.id} style={styles.linkedChecklistItem}>
+            <ChecklistRow
+              title={`${language === "sw" ? "Hatua ya" : "Step"} ${index + 1}: ${pick(language, step.titleSw, step.titleEn)}`}
+              description={pick(language, step.descriptionSw, step.descriptionEn)}
+              checked={checklistItems.includes(`step-${step.id}`)}
+              onToggle={() => toggleChecklistItem(selectedGuide.slug, `step-${step.id}`)}
+            />
+            <View style={styles.inlineActions}>
+              <AppButton title={language === "sw" ? "Chanzo" : "Source"} icon="open-outline" variant="ghost" onPress={() => openSourceUrl(step.officialSourceUrl)} />
+              {step.reminderTemplate ? (
+                <AppButton
+                  title={language === "sw" ? "Reminder" : "Reminder"}
+                  icon="alarm-outline"
+                  variant="ghost"
+                  onPress={() => createReminderFromTemplate(pick(language, step.titleSw, step.titleEn), step.reminderTemplate as NonNullable<typeof step.reminderTemplate>)}
+                />
+              ) : null}
+            </View>
+          </View>
         ))}
       </AppCard>
 
@@ -276,6 +357,14 @@ const styles = StyleSheet.create({
   bullet: {
     flexDirection: "row",
     alignItems: "flex-start",
+    gap: spacing.sm
+  },
+  linkedChecklistItem: {
+    gap: spacing.xs
+  },
+  inlineActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.sm
   }
 });

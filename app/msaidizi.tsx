@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { StyleSheet, View } from "react-native";
@@ -16,7 +16,9 @@ import { colors, spacing } from "@/constants/theme";
 import { trackAnalyticsEvent } from "@/services/analyticsService";
 import { answerMsaidizi } from "@/services/msaidiziService";
 import { useAppStore } from "@/store/useAppStore";
+import { pick } from "@/utils/copy";
 import { MsaidiziAnswer, msaidiziFallback } from "@/utils/msaidizi";
+import { getGuideBySlug } from "@/utils/search";
 
 const schema = z.object({
   question: z.string().min(2, "Ask a question")
@@ -27,6 +29,8 @@ type FormValues = z.infer<typeof schema>;
 const examples = ["NIDA inahitaji nini?", "TIN kwa freelancer", "Kusajili jina la biashara", "Leseni ya udereva renewal"];
 
 export default function MsaidiziScreen() {
+  const params = useLocalSearchParams<{ guideSlug?: string; question?: string }>();
+  const scopedGuide = getGuideBySlug(params.guideSlug);
   const language = useAppStore((state) => state.language);
   const userProfile = useAppStore((state) => state.userProfile);
   const [answer, setAnswer] = useState<MsaidiziAnswer | null>(null);
@@ -38,12 +42,12 @@ export default function MsaidiziScreen() {
     formState: { errors }
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { question: "" }
+    defaultValues: { question: params.question ?? "" }
   });
 
-  async function askQuestion(question: string) {
+  async function askQuestion(question: string, guideSlug = scopedGuide?.slug) {
     setIsThinking(true);
-    const nextAnswer = await answerMsaidizi(question, language, userProfile?.id);
+    const nextAnswer = await answerMsaidizi(question, language, userProfile?.id, guideSlug);
     setAnswer(nextAnswer);
     setIsThinking(false);
     void trackAnalyticsEvent(
@@ -53,6 +57,7 @@ export default function MsaidiziScreen() {
         fallbackUsed: nextAnswer.confidence === "fallback",
         guideSlugs: nextAnswer.guides.map((guide) => guide.slug),
         questionLength: question.trim().length,
+        scopedGuideSlug: guideSlug,
         language
       },
       userProfile?.id
@@ -83,6 +88,17 @@ export default function MsaidiziScreen() {
         }
         tone="warning"
       />
+
+      {scopedGuide ? (
+        <InfoBanner
+          title={language === "sw" ? "Imefungwa kwenye guide" : "Scoped to this guide"}
+          body={
+            language === "sw"
+              ? `Majibu yataanza na ${pick(language, scopedGuide.titleSw, scopedGuide.titleEn)}. Unaweza kupanua utafutaji ukihitaji.`
+              : `Answers start with ${pick(language, scopedGuide.titleSw, scopedGuide.titleEn)}. You can broaden search if needed.`
+          }
+        />
+      ) : null}
 
       <AppCard>
         <Controller
@@ -117,6 +133,15 @@ export default function MsaidiziScreen() {
           loading={isThinking}
           onPress={handleSubmit(onSubmit)}
         />
+        {scopedGuide ? (
+          <AppButton
+            title={language === "sw" ? "Panua utafutaji" : "Broaden search"}
+            icon="expand-outline"
+            variant="secondary"
+            loading={isThinking}
+            onPress={handleSubmit((values) => askQuestion(values.question, undefined))}
+          />
+        ) : null}
       </AppCard>
 
       {answer ? (

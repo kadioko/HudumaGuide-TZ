@@ -26,7 +26,7 @@ export default function RootLayout() {
 
   return (
     <>
-      <StatusBar style="dark" backgroundColor={colors.background} />
+      <StatusBar style="dark" />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.background },
@@ -45,6 +45,7 @@ export default function RootLayout() {
         <Stack.Screen name="services/[slug]/checklist" options={{ title: "Checklist" }} />
         <Stack.Screen name="checklists" options={{ title: "Saved Checklists" }} />
         <Stack.Screen name="msaidizi" options={{ title: "Msaidizi" }} />
+        <Stack.Screen name="sync-review" options={{ title: "Sync Review" }} />
         <Stack.Screen name="beta-readiness" options={{ title: "Beta Readiness" }} />
         <Stack.Screen name="admin/index" options={{ title: "Admin Console" }} />
         <Stack.Screen name="admin/categories" options={{ title: "Service Categories" }} />

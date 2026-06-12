@@ -7,10 +7,11 @@ type PillProps = {
   label: string;
   active?: boolean;
   icon?: keyof typeof Ionicons.glyphMap;
+  tone?: "neutral" | "success" | "warning" | "danger";
   onPress?: () => void;
 };
 
-export function Pill({ label, active, icon, onPress }: PillProps) {
+export function Pill({ label, active, icon, tone = "neutral", onPress }: PillProps) {
   const content = (
     <>
       {icon ? <Ionicons name={icon} size={15} color={active ? colors.surface : colors.green} /> : null}
@@ -21,7 +22,7 @@ export function Pill({ label, active, icon, onPress }: PillProps) {
   );
 
   if (!onPress) {
-    return <View accessibilityLabel={label} style={[styles.pill, active && styles.active]}>{content}</View>;
+    return <View accessibilityLabel={label} style={[styles.pill, styles[tone], active && styles.active]}>{content}</View>;
   }
 
   return (
@@ -30,7 +31,7 @@ export function Pill({ label, active, icon, onPress }: PillProps) {
       accessibilityLabel={label}
       accessibilityState={{ selected: Boolean(active) }}
       onPress={onPress}
-      style={({ pressed }) => [styles.pill, active && styles.active, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.pill, styles[tone], active && styles.active, pressed && styles.pressed]}
     >
       {content}
     </Pressable>
@@ -52,6 +53,16 @@ const styles = StyleSheet.create({
   active: {
     backgroundColor: colors.green,
     borderColor: colors.green
+  },
+  neutral: {},
+  success: {
+    borderColor: colors.green
+  },
+  warning: {
+    borderColor: colors.gold
+  },
+  danger: {
+    borderColor: colors.red
   },
   pressed: {
     opacity: 0.78
