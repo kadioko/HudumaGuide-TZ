@@ -1,5 +1,6 @@
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, useWindowDimensions, View } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
@@ -16,6 +17,8 @@ import { ServiceGuide } from "@/types";
 import { getGuideFreshness, getGuideSourceConfidence } from "@/utils/guideTrust";
 
 export default function AdminIndexScreen() {
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 430;
   const profile = useAppStore((state) => state.userProfile);
   const isAdmin = profile?.email?.includes("admin") || false;
   const guides = getLocalAdminGuides();
@@ -42,7 +45,14 @@ export default function AdminIndexScreen() {
 
   return (
     <Screen>
-      <SectionHeader title="Admin content console" subtitle="Service guide publishing, review, and content quality workflows." />
+      <AppCard style={styles.hero}>
+        <View style={styles.heroIcon}>
+          <Ionicons name="shield-checkmark-outline" size={25} color={colors.green} />
+        </View>
+        <View style={styles.flex}>
+          <SectionHeader title="Admin content console" subtitle="Service guide publishing, review, and content quality workflows." />
+        </View>
+      </AppCard>
       <InfoBanner
         title={isSupabaseConfigured ? "Supabase admin mode" : "Local planning mode"}
         body={
@@ -119,17 +129,38 @@ export default function AdminIndexScreen() {
         </View>
       </AppCard>
 
-      <AppButton title="Manage categories" icon="albums-outline" onPress={() => router.push("/admin/categories")} />
-      <AppButton title="Manage service guides" icon="document-text-outline" variant="secondary" onPress={() => router.push("/admin/guides")} />
-      <AppButton title="Review outdated reports" icon="flag-outline" variant="secondary" onPress={() => router.push("/admin/reports")} />
-      <AppButton title="Analytics dashboard" icon="analytics-outline" variant="secondary" onPress={() => router.push("/admin/analytics")} />
-      <AppButton title="Content versions" icon="git-branch-outline" variant="secondary" onPress={() => router.push("/admin/versions")} />
-      <AppButton title="Storage cleanup" icon="shield-checkmark-outline" variant="secondary" onPress={() => router.push("/admin/storage-cleanup")} />
+      <AppCard>
+        <AppText variant="h3">Admin shortcuts</AppText>
+        <View style={styles.actionGrid}>
+          <AppButton title="Categories" icon="albums-outline" compact onPress={() => router.push("/admin/categories")} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+          <AppButton title="Guides" icon="document-text-outline" variant="secondary" compact onPress={() => router.push("/admin/guides")} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+          <AppButton title="Reports" icon="flag-outline" variant="secondary" compact onPress={() => router.push("/admin/reports")} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+          <AppButton title="Analytics" icon="analytics-outline" variant="secondary" compact onPress={() => router.push("/admin/analytics")} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+          <AppButton title="Versions" icon="git-branch-outline" variant="secondary" compact onPress={() => router.push("/admin/versions")} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+          <AppButton title="Storage cleanup" icon="shield-checkmark-outline" variant="secondary" compact onPress={() => router.push("/admin/storage-cleanup")} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+        </View>
+      </AppCard>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  hero: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  heroIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 8,
+    backgroundColor: colors.greenSoft,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  flex: {
+    flex: 1
+  },
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -149,5 +180,18 @@ const styles = StyleSheet.create({
   confidenceTitle: {
     flex: 1,
     fontWeight: "800"
+  },
+  actionGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm
+  },
+  actionTile: {
+    flexBasis: "48%",
+    flexGrow: 1
+  },
+  actionTileFull: {
+    flexBasis: "100%",
+    flexGrow: 1
   }
 });

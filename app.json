@@ -16,6 +16,7 @@
     },
     "android": {
       "package": "com.hudumaguide.tz",
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0A7A55"
@@ -50,6 +51,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3ec512a7-d16b-4e3a-a962-20b54f72669c"
+      }
+    },
+    "owner": "kadioko"
   }
 }

@@ -11,6 +11,7 @@ type AppButtonProps = {
   icon?: keyof typeof Ionicons.glyphMap;
   disabled?: boolean;
   loading?: boolean;
+  compact?: boolean;
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
 };
@@ -22,6 +23,7 @@ export function AppButton({
   icon,
   disabled,
   loading,
+  compact,
   style
 }: AppButtonProps) {
   const isPrimary = variant === "primary";
@@ -37,6 +39,7 @@ export function AppButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
+        compact && styles.compact,
         styles[variant],
         (disabled || loading) && styles.disabled,
         pressed && !disabled ? styles.pressed : null,
@@ -67,6 +70,10 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
     borderWidth: 1
+  },
+  compact: {
+    minHeight: 42,
+    paddingHorizontal: spacing.md
   },
   primary: {
     backgroundColor: colors.green,

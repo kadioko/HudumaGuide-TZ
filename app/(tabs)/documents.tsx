@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
+import { Alert, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
@@ -22,6 +22,8 @@ import { DocumentFolder } from "@/types";
 import { getDocumentNextAction, getDocumentStatus, getExpiringDocuments } from "@/utils/documents";
 
 export default function DocumentsScreen() {
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 430;
   const [selectedFolder, setSelectedFolder] = useState<DocumentFolder | "All">("All");
   const language = useAppStore((state) => state.language);
   const documents = useAppStore((state) => state.userDocuments);
@@ -45,14 +47,21 @@ export default function DocumentsScreen() {
 
   return (
     <Screen>
-      <SectionHeader
-        title={language === "sw" ? "Document Vault" : "Document Vault"}
-        subtitle={
-          language === "sw"
-            ? "Hifadhi metadata, expiry na reminders za nyaraka zako."
-            : "Track document metadata, expiry dates, and reminders."
-        }
-      />
+      <AppCard style={styles.hero}>
+        <View style={styles.heroIcon}>
+          <Ionicons name="folder-open-outline" size={25} color={colors.green} />
+        </View>
+        <View style={styles.flex}>
+          <SectionHeader
+            title={language === "sw" ? "Document Vault" : "Document Vault"}
+            subtitle={
+              language === "sw"
+                ? "Hifadhi metadata, expiry na reminders za nyaraka zako."
+                : "Track document metadata, expiry dates, and reminders."
+            }
+          />
+        </View>
+      </AppCard>
 
       <InfoBanner
         title="Privacy-first MVP"
@@ -67,22 +76,39 @@ export default function DocumentsScreen() {
         <MetricTile label="Expired" value={String(expiredCount)} icon="alert-circle-outline" tone="blue" />
       </View>
 
-      <AppButton title="Add document" icon="add-circle-outline" onPress={() => router.push("/documents/upload")} />
+      <View style={styles.actions}>
+        <AppButton title={language === "sw" ? "Ongeza document" : "Add document"} icon="add-circle-outline" onPress={() => router.push("/documents/upload")} style={styles.actionButton} />
+        <AppButton title={language === "sw" ? "Security" : "Security"} icon="shield-checkmark-outline" variant="secondary" compact onPress={() => setSelectedFolder("All")} style={styles.actionButton} />
+      </View>
       {documents.length ? (
         <InfoBanner title="Next document action" body={getDocumentNextAction(documents[0])} />
       ) : null}
 
       <AppCard>
         <AppText variant="h3">Vault security settings</AppText>
-        <AppText muted>Upload size limit: {formatBytes(documentUploadConfig.maxBytes)}</AppText>
-        <AppText muted>Allowed file types: {allowedFileTypes}</AppText>
-        <AppText muted>Local document metadata: {documents.length} records</AppText>
-        <AppText muted>Private file previews: {fileBackedRecords} storage references</AppText>
-        <AppText muted>Storage cleanup queue: {storageCleanupQueue} local-only references</AppText>
+        <View style={styles.securityGrid}>
+          <View style={isNarrow ? styles.securityStatFull : styles.securityStat}>
+            <AppText variant="h3">{formatBytes(documentUploadConfig.maxBytes)}</AppText>
+            <AppText variant="tiny" muted>Upload limit</AppText>
+          </View>
+          <View style={isNarrow ? styles.securityStatFull : styles.securityStat}>
+            <AppText variant="h3">{documents.length}</AppText>
+            <AppText variant="tiny" muted>Metadata records</AppText>
+          </View>
+          <View style={isNarrow ? styles.securityStatFull : styles.securityStat}>
+            <AppText variant="h3">{fileBackedRecords}</AppText>
+            <AppText variant="tiny" muted>File refs</AppText>
+          </View>
+          <View style={isNarrow ? styles.securityStatFull : styles.securityStat}>
+            <AppText variant="h3">{storageCleanupQueue}</AppText>
+            <AppText variant="tiny" muted>Cleanup queue</AppText>
+          </View>
+        </View>
+        <AppText variant="small" muted>Allowed file types: {allowedFileTypes}</AppText>
         <View style={styles.securityActions}>
-          <AppButton title="Add secure document" icon="cloud-upload-outline" variant="secondary" onPress={() => router.push("/documents/upload")} />
+          <AppButton title="Add secure document" icon="cloud-upload-outline" variant="secondary" compact onPress={() => router.push("/documents/upload")} />
           {documents.length ? (
-            <AppButton title="Delete local metadata" icon="trash-outline" variant="danger" onPress={confirmClearDocumentMetadata} />
+            <AppButton title="Delete local metadata" icon="trash-outline" variant="danger" compact onPress={confirmClearDocumentMetadata} />
           ) : null}
         </View>
       </AppCard>
@@ -98,15 +124,24 @@ export default function DocumentsScreen() {
         {documentFolders.map((folder) => {
           const count = documents.filter((document) => document.folder === folder).length;
           return (
-            <AppCard key={folder} style={styles.folder} muted={selectedFolder !== "All" && selectedFolder !== folder}>
-              <Ionicons name="folder-open-outline" size={26} color={colors.green} />
-              <AppText variant="small" style={styles.folderTitle}>
-                {folder}
-              </AppText>
-              <AppText variant="tiny" muted>
-                {count} records
-              </AppText>
-            </AppCard>
+            <Pressable
+              key={folder}
+              accessibilityRole="button"
+              accessibilityLabel={`${folder} folder`}
+              accessibilityState={{ selected: selectedFolder === folder }}
+              onPress={() => setSelectedFolder(folder)}
+              style={({ pressed }) => [isNarrow ? styles.folderPressableFull : styles.folderPressable, pressed && styles.pressed]}
+            >
+              <AppCard style={styles.folder} muted={selectedFolder !== "All" && selectedFolder !== folder}>
+                <Ionicons name="folder-open-outline" size={26} color={colors.green} />
+                <AppText variant="small" style={styles.folderTitle}>
+                  {folder}
+                </AppText>
+                <AppText variant="tiny" muted>
+                  {count} records
+                </AppText>
+              </AppCard>
+            </Pressable>
           );
         })}
       </View>
@@ -231,6 +266,29 @@ function formatBytes(bytes: number) {
 }
 
 const styles = StyleSheet.create({
+  hero: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  heroIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 8,
+    backgroundColor: colors.greenSoft,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  flex: {
+    flex: 1
+  },
+  actions: {
+    flexDirection: "row",
+    gap: spacing.sm
+  },
+  actionButton: {
+    flex: 1
+  },
   metrics: {
     flexDirection: "row",
     gap: spacing.sm
@@ -246,9 +304,20 @@ const styles = StyleSheet.create({
     gap: spacing.md
   },
   folder: {
-    width: "47%",
+    flex: 1,
     minHeight: 112,
     justifyContent: "center"
+  },
+  folderPressable: {
+    width: "47%",
+    minWidth: 152
+  },
+  folderPressableFull: {
+    width: "100%"
+  },
+  pressed: {
+    opacity: 0.8,
+    transform: [{ translateY: 1 }]
   },
   folderTitle: {
     fontWeight: "800"
@@ -258,5 +327,30 @@ const styles = StyleSheet.create({
   },
   securityActions: {
     gap: spacing.sm
+  },
+  securityGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm
+  },
+  securityStat: {
+    flexBasis: "48%",
+    flexGrow: 1,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    borderRadius: 8,
+    backgroundColor: colors.surfaceMuted,
+    padding: spacing.md,
+    gap: spacing.xs
+  },
+  securityStatFull: {
+    flexBasis: "100%",
+    flexGrow: 1,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    borderRadius: 8,
+    backgroundColor: colors.surfaceMuted,
+    padding: spacing.md,
+    gap: spacing.xs
   }
 });

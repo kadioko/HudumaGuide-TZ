@@ -1,7 +1,8 @@
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Constants from "expo-constants";
 import { useEffect, useState } from "react";
-import { Alert, Platform, Share } from "react-native";
+import { Alert, Platform, Share, StyleSheet, useWindowDimensions, View } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
@@ -16,8 +17,11 @@ import { clearLocalAnalyticsData, getLocalAnalyticsSummary, trackAnalyticsEvent 
 import { getRuntimeIssueLog } from "@/services/runtimeLogger";
 import { useAppStore } from "@/store/useAppStore";
 import { trustNotice } from "@/utils/copy";
+import { colors, spacing } from "@/constants/theme";
 
 export default function ProfileScreen() {
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 430;
   const language = useAppStore((state) => state.language);
   const userProfile = useAppStore((state) => state.userProfile);
   const syncStatus = useAppStore((state) => state.syncStatus);
@@ -245,10 +249,20 @@ export default function ProfileScreen() {
 
   return (
     <Screen>
-      <SectionHeader title={language === "sw" ? "Profile & settings" : "Profile & settings"} subtitle="HudumaGuide TZ" />
+      <AppCard style={styles.hero}>
+        <View style={styles.avatar}>
+          <Ionicons name={userProfile ? "person" : "person-outline"} size={24} color={colors.surface} />
+        </View>
+        <View style={styles.flex}>
+          <SectionHeader title={language === "sw" ? "Wasifu na mipangilio" : "Profile & settings"} subtitle="HudumaGuide TZ" />
+          <AppText variant="small" muted>
+            {userProfile?.email ?? (language === "sw" ? "Local-only mode" : "Local-only mode")}
+          </AppText>
+        </View>
+      </AppCard>
 
       <InfoBanner
-        title={userProfile ? "Account-backed beta" : "Local-only mode"}
+        title={userProfile ? (language === "sw" ? "Akaunti imeunganishwa" : "Account-backed beta") : language === "sw" ? "Local-only mode" : "Local-only mode"}
         body={
           userProfile
             ? `Signed in${userProfile.email ? ` as ${userProfile.email}` : ""}. Sync status: ${syncStatus}.`
@@ -257,6 +271,21 @@ export default function ProfileScreen() {
         tone={syncStatus === "error" ? "warning" : "info"}
       />
       {syncError ? <InfoBanner title="Sync issue" body={syncError} tone="warning" /> : null}
+
+      <View style={styles.metrics}>
+        <AppCard style={styles.metric}>
+          <AppText variant="h2">{savedGuides}</AppText>
+          <AppText variant="tiny" muted>{language === "sw" ? "Guides" : "Guides"}</AppText>
+        </AppCard>
+        <AppCard style={styles.metric}>
+          <AppText variant="h2">{reminders}</AppText>
+          <AppText variant="tiny" muted>{language === "sw" ? "Reminders" : "Reminders"}</AppText>
+        </AppCard>
+        <AppCard style={styles.metric}>
+          <AppText variant="h2">{documents}</AppText>
+          <AppText variant="tiny" muted>{language === "sw" ? "Nyaraka" : "Documents"}</AppText>
+        </AppCard>
+      </View>
 
       <AppCard>
         <AppText variant="h3">Language</AppText>
@@ -279,7 +308,7 @@ export default function ProfileScreen() {
         <AppText muted>Business plans: {businessPlans}</AppText>
         <AppText muted>Pending sync saves: {syncQueue.length}</AppText>
         <AppText muted>Offline guide cache: {offlineGuideCache?.guideCount ?? 0} guides</AppText>
-        <AppButton title="Review sync queue" icon="git-compare-outline" variant="secondary" onPress={() => router.push("/sync-review" as never)} />
+        <AppButton title="Review sync queue" icon="git-compare-outline" variant="secondary" compact onPress={() => router.push("/sync-review" as never)} />
       </AppCard>
 
       <AppCard>
@@ -293,8 +322,8 @@ export default function ProfileScreen() {
           variant={lowDataMode ? "primary" : "secondary"}
           onPress={() => setLowDataMode(!lowDataMode)}
         />
-        <AppButton title="Refresh offline guide cache" icon="download-outline" variant="secondary" onPress={refreshOfflineGuideCache} />
-        {syncQueue.length ? <AppButton title="Retry pending sync" icon="refresh-outline" onPress={retryQueuedSync} /> : null}
+        <AppButton title="Refresh offline guide cache" icon="download-outline" variant="secondary" compact onPress={refreshOfflineGuideCache} />
+        {syncQueue.length ? <AppButton title="Retry pending sync" icon="refresh-outline" compact onPress={retryQueuedSync} /> : null}
       </AppCard>
 
       <AppCard>
@@ -302,8 +331,10 @@ export default function ProfileScreen() {
         <AppText muted>Runtime: {getRuntimeLabel()}</AppText>
         <AppText muted>Channel: {Platform.OS === "web" ? "web" : "native"}; update: {Platform.OS === "web" ? "Vercel bundle" : "native bundle"}</AppText>
         <AppText muted>{updateStatus}</AppText>
-        <AppButton title="Check for update" icon="cloud-download-outline" variant="secondary" loading={isCheckingUpdate} onPress={checkForUpdate} />
-        <AppButton title={Platform.OS === "web" ? "Refresh page" : "Restart to apply update"} icon="refresh-circle-outline" variant="secondary" onPress={() => void reloadApp()} />
+        <View style={styles.actionGrid}>
+          <AppButton title="Check for update" icon="cloud-download-outline" variant="secondary" compact loading={isCheckingUpdate} onPress={checkForUpdate} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+          <AppButton title={Platform.OS === "web" ? "Refresh page" : "Restart app"} icon="refresh-circle-outline" variant="secondary" compact onPress={() => void reloadApp()} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+        </View>
       </AppCard>
 
       <AppCard>
@@ -324,24 +355,29 @@ export default function ProfileScreen() {
         />
       </AppCard>
 
-      {userProfile ? (
-        <>
-          <AppButton title="Sync now" icon="cloud-upload-outline" variant="secondary" onPress={syncNow} />
-          <AppButton title="Sign out" icon="log-out-outline" variant="secondary" onPress={logout} />
-        </>
-      ) : (
-        <AppButton title="Account / login" icon="person-circle-outline" variant="secondary" onPress={() => router.push("/auth")} />
-      )}
-      <AppButton title="Export my data" icon="download-outline" variant="secondary" onPress={exportData} />
-      <AppButton title="Export beta diagnostics" icon="bug-outline" variant="secondary" onPress={exportDiagnostics} />
-      <AppButton title="Beta readiness checklist" icon="clipboard-outline" variant="secondary" onPress={() => router.push("/beta-readiness" as never)} />
-      <AppButton title="Support & safety" icon="help-circle-outline" variant="secondary" onPress={() => router.push("/support" as never)} />
-      <AppButton title="Clear local analytics" icon="analytics-outline" variant="secondary" onPress={clearAnalyticsOnly} />
-      <AppButton title="Admin content console" icon="shield-checkmark-outline" variant="secondary" onPress={() => router.push("/admin/index")} />
-      <AppButton title={userProfile ? "Delete account" : "Clear local data"} icon="trash-outline" variant="danger" onPress={confirmDeleteAccount} />
-      <AppButton title="About & disclaimer" icon="information-circle-outline" variant="secondary" onPress={() => router.push("/disclaimer")} />
-      <AppButton title="Privacy policy" icon="lock-closed-outline" variant="secondary" onPress={() => router.push("/privacy")} />
-      <AppButton title="Terms of use" icon="document-text-outline" variant="secondary" onPress={() => router.push("/terms")} />
+      <AppCard>
+        <AppText variant="h3">{language === "sw" ? "Actions" : "Actions"}</AppText>
+        <View style={styles.actionGrid}>
+          {userProfile ? (
+            <>
+              <AppButton title="Sync now" icon="cloud-upload-outline" variant="secondary" compact onPress={syncNow} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+              <AppButton title="Sign out" icon="log-out-outline" variant="secondary" compact onPress={logout} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+            </>
+          ) : (
+            <AppButton title="Account / login" icon="person-circle-outline" variant="secondary" compact onPress={() => router.push("/auth")} style={styles.actionTileWide} />
+          )}
+          <AppButton title="Export my data" icon="download-outline" variant="secondary" compact onPress={exportData} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+          <AppButton title="Beta diagnostics" icon="bug-outline" variant="secondary" compact onPress={exportDiagnostics} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+          <AppButton title="Beta checklist" icon="clipboard-outline" variant="secondary" compact onPress={() => router.push("/beta-readiness" as never)} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+          <AppButton title="Support & safety" icon="help-circle-outline" variant="secondary" compact onPress={() => router.push("/support" as never)} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+          <AppButton title="Clear analytics" icon="analytics-outline" variant="secondary" compact onPress={clearAnalyticsOnly} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+          <AppButton title="Admin console" icon="shield-checkmark-outline" variant="secondary" compact onPress={() => router.push("/admin/index")} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+          <AppButton title="About" icon="information-circle-outline" variant="secondary" compact onPress={() => router.push("/disclaimer")} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+          <AppButton title="Privacy" icon="lock-closed-outline" variant="secondary" compact onPress={() => router.push("/privacy")} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+          <AppButton title="Terms" icon="document-text-outline" variant="secondary" compact onPress={() => router.push("/terms")} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+          <AppButton title={userProfile ? "Delete account" : "Clear local data"} icon="trash-outline" variant="danger" compact onPress={confirmDeleteAccount} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+        </View>
+      </AppCard>
       <InfoBanner title="Trust notice" body={trustNotice} tone="warning" />
     </Screen>
   );
@@ -388,4 +424,50 @@ function getRuntimeLabel() {
 
   return Constants.expoConfig?.version ?? "appVersion";
 }
+
+const styles = StyleSheet.create({
+  hero: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 8,
+    backgroundColor: colors.green,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  flex: {
+    flex: 1
+  },
+  metrics: {
+    flexDirection: "row",
+    gap: spacing.sm
+  },
+  metric: {
+    flex: 1,
+    minHeight: 88,
+    justifyContent: "center",
+    gap: spacing.xs
+  },
+  actionGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm
+  },
+  actionTile: {
+    flexBasis: "48%",
+    flexGrow: 1
+  },
+  actionTileFull: {
+    flexBasis: "100%",
+    flexGrow: 1
+  },
+  actionTileWide: {
+    flexBasis: "100%",
+    flexGrow: 1
+  }
+});
 

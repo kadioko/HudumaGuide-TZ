@@ -10,6 +10,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 *.jks
+credentials.json
 *.p8
 *.p12
 *.key
