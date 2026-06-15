@@ -1,11 +1,27 @@
-<svg width="1200" height="400" viewBox="0 0 1200 400" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1200" height="400" rx="72" fill="#F7FAF8"/>
-  <circle cx="200" cy="200" r="116" fill="#0A7A55"/>
-  <path d="M200 82L282 116V186C282 246 246 292 200 316C154 292 118 246 118 186V116L200 82Z" fill="#FFFFFF"/>
-  <path d="M161 199L190 228L243 163" stroke="#0A7A55" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M315 115C344 115 367 138 367 167C367 218 315 286 315 286C315 286 263 218 263 167C263 138 286 115 315 115Z" fill="#1769AA"/>
-  <circle cx="315" cy="166" r="18" fill="#FFFFFF"/>
-  <text x="420" y="184" fill="#17231E" font-family="Inter, Arial, sans-serif" font-size="68" font-weight="800">HudumaGuide</text>
-  <text x="424" y="252" fill="#0A7A55" font-family="Inter, Arial, sans-serif" font-size="42" font-weight="700">TZ</text>
-  <text x="500" y="252" fill="#607068" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="600">Huduma za Serikali na Biashara kwa urahisi</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="420" viewBox="0 0 1400 420" role="img" aria-label="HudumaGuide TZ logo">
+  <rect x="18" y="18" width="1364" height="384" rx="58" fill="#FFFFFF" stroke="#DCE8E0" stroke-width="3"/>
+  <g transform="translate(80 80) scale(.2539)">
+    <rect width="1024" height="1024" rx="210" fill="#0A7A55"/>
+    <circle cx="125" cy="115" r="305" fill="#FFFFFF" opacity=".08"/>
+    <circle cx="870" cy="935" r="250" fill="#075F43" opacity=".32"/>
+    <path d="M512 170 790 270 740 640 512 845 284 640 234 270Z" fill="#FFFFFF"/>
+    <path d="M512 224 714 306 674 596 512 754 350 596 310 306Z" fill="#DDF3EA"/>
+    <path d="M346 366 512 258 678 366Z" fill="#0A7A55"/>
+    <rect x="374" y="380" width="276" height="50" rx="16" fill="#075F43"/>
+    <rect x="414" y="434" width="44" height="126" rx="12" fill="#0A7A55"/>
+    <rect x="494" y="434" width="44" height="126" rx="12" fill="#0A7A55"/>
+    <rect x="574" y="434" width="44" height="126" rx="12" fill="#0A7A55"/>
+    <path d="M382 586 470 502 548 575 666 404" fill="none" stroke="#D99A16" stroke-width="54" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M382 586 470 502 548 575 666 404" fill="none" stroke="#FFFFFF" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="382" cy="586" r="34" fill="#D99A16"/><circle cx="382" cy="586" r="15" fill="#FFFFFF"/>
+    <circle cx="470" cy="502" r="34" fill="#D99A16"/><circle cx="470" cy="502" r="15" fill="#FFFFFF"/>
+    <circle cx="548" cy="575" r="34" fill="#D99A16"/><circle cx="548" cy="575" r="15" fill="#FFFFFF"/>
+    <circle cx="666" cy="404" r="34" fill="#D99A16"/><circle cx="666" cy="404" r="15" fill="#FFFFFF"/>
+    <path d="M356 676 458 758 678 528" fill="none" stroke="#075F43" stroke-width="54" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M356 676 458 758 678 528" fill="none" stroke="#FFFFFF" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="390" y="168" fill="#17231E" font-family="Arial, Helvetica, sans-serif" font-size="82" font-weight="700">HudumaGuide TZ</text>
+  <text x="394" y="242" fill="#607068" font-family="Arial, Helvetica, sans-serif" font-size="34">Huduma za Serikali na Biashara kwa urahisi</text>
+  <rect x="395" y="285" width="330" height="50" rx="24" fill="#DDF3EA"/>
+  <text x="425" y="319" fill="#075F43" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">Independent guide</text>
 </svg>
