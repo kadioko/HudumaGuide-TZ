@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Constants from "expo-constants";
 import { useEffect, useState } from "react";
-import { Alert, Platform, Share, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Alert, Platform, Share, StyleSheet, View } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
@@ -20,8 +20,6 @@ import { trustNotice } from "@/utils/copy";
 import { colors, spacing } from "@/constants/theme";
 
 export default function ProfileScreen() {
-  const { width } = useWindowDimensions();
-  const isNarrow = width < 430;
   const language = useAppStore((state) => state.language);
   const userProfile = useAppStore((state) => state.userProfile);
   const syncStatus = useAppStore((state) => state.syncStatus);
@@ -332,8 +330,8 @@ export default function ProfileScreen() {
         <AppText muted>Channel: {Platform.OS === "web" ? "web" : "native"}; update: {Platform.OS === "web" ? "Vercel bundle" : "native bundle"}</AppText>
         <AppText muted>{updateStatus}</AppText>
         <View style={styles.actionGrid}>
-          <AppButton title="Check for update" icon="cloud-download-outline" variant="secondary" compact loading={isCheckingUpdate} onPress={checkForUpdate} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
-          <AppButton title={Platform.OS === "web" ? "Refresh page" : "Restart app"} icon="refresh-circle-outline" variant="secondary" compact onPress={() => void reloadApp()} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+          <AppButton title="Check for update" icon="cloud-download-outline" variant="secondary" compact loading={isCheckingUpdate} onPress={checkForUpdate} style={styles.actionTile} />
+          <AppButton title={Platform.OS === "web" ? "Refresh page" : "Restart app"} icon="refresh-circle-outline" variant="secondary" compact onPress={() => void reloadApp()} style={styles.actionTile} />
         </View>
       </AppCard>
 
@@ -360,22 +358,22 @@ export default function ProfileScreen() {
         <View style={styles.actionGrid}>
           {userProfile ? (
             <>
-              <AppButton title="Sync now" icon="cloud-upload-outline" variant="secondary" compact onPress={syncNow} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
-              <AppButton title="Sign out" icon="log-out-outline" variant="secondary" compact onPress={logout} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+              <AppButton title="Sync now" icon="cloud-upload-outline" variant="secondary" compact onPress={syncNow} style={styles.actionTile} />
+              <AppButton title="Sign out" icon="log-out-outline" variant="secondary" compact onPress={logout} style={styles.actionTile} />
             </>
           ) : (
             <AppButton title="Account / login" icon="person-circle-outline" variant="secondary" compact onPress={() => router.push("/auth")} style={styles.actionTileWide} />
           )}
-          <AppButton title="Export my data" icon="download-outline" variant="secondary" compact onPress={exportData} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
-          <AppButton title="Beta diagnostics" icon="bug-outline" variant="secondary" compact onPress={exportDiagnostics} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
-          <AppButton title="Beta checklist" icon="clipboard-outline" variant="secondary" compact onPress={() => router.push("/beta-readiness" as never)} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
-          <AppButton title="Support & safety" icon="help-circle-outline" variant="secondary" compact onPress={() => router.push("/support" as never)} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
-          <AppButton title="Clear analytics" icon="analytics-outline" variant="secondary" compact onPress={clearAnalyticsOnly} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
-          <AppButton title="Admin console" icon="shield-checkmark-outline" variant="secondary" compact onPress={() => router.push("/admin/index")} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
-          <AppButton title="About" icon="information-circle-outline" variant="secondary" compact onPress={() => router.push("/disclaimer")} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
-          <AppButton title="Privacy" icon="lock-closed-outline" variant="secondary" compact onPress={() => router.push("/privacy")} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
-          <AppButton title="Terms" icon="document-text-outline" variant="secondary" compact onPress={() => router.push("/terms")} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
-          <AppButton title={userProfile ? "Delete account" : "Clear local data"} icon="trash-outline" variant="danger" compact onPress={confirmDeleteAccount} style={isNarrow ? styles.actionTileFull : styles.actionTile} />
+          <AppButton title="Export my data" icon="download-outline" variant="secondary" compact onPress={exportData} style={styles.actionTile} />
+          <AppButton title="Beta diagnostics" icon="bug-outline" variant="secondary" compact onPress={exportDiagnostics} style={styles.actionTile} />
+          <AppButton title="Beta checklist" icon="clipboard-outline" variant="secondary" compact onPress={() => router.push("/beta-readiness" as never)} style={styles.actionTile} />
+          <AppButton title="Support & safety" icon="help-circle-outline" variant="secondary" compact onPress={() => router.push("/support" as never)} style={styles.actionTile} />
+          <AppButton title="Clear analytics" icon="analytics-outline" variant="secondary" compact onPress={clearAnalyticsOnly} style={styles.actionTile} />
+          <AppButton title="Admin console" icon="shield-checkmark-outline" variant="secondary" compact onPress={() => router.push("/admin/index" as never)} style={styles.actionTile} />
+          <AppButton title="About" icon="information-circle-outline" variant="secondary" compact onPress={() => router.push("/disclaimer")} style={styles.actionTile} />
+          <AppButton title="Privacy" icon="lock-closed-outline" variant="secondary" compact onPress={() => router.push("/privacy")} style={styles.actionTile} />
+          <AppButton title="Terms" icon="document-text-outline" variant="secondary" compact onPress={() => router.push("/terms")} style={styles.actionTile} />
+          <AppButton title={userProfile ? "Delete account" : "Clear local data"} icon="trash-outline" variant="danger" compact onPress={confirmDeleteAccount} style={styles.actionTile} />
         </View>
       </AppCard>
       <InfoBanner title="Trust notice" body={trustNotice} tone="warning" />
@@ -458,12 +456,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   },
   actionTile: {
-    flexBasis: "48%",
-    flexGrow: 1
-  },
-  actionTileFull: {
-    flexBasis: "100%",
-    flexGrow: 1
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 210
   },
   actionTileWide: {
     flexBasis: "100%",
