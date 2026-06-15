@@ -8,23 +8,29 @@ import { AppText } from "@/components/AppText";
 import { Screen } from "@/components/Screen";
 import { colors, radii, spacing } from "@/constants/theme";
 import { useAppStore } from "@/store/useAppStore";
-import { OnboardingPersona } from "@/types";
+import { Language, OnboardingPersona } from "@/types";
 
 const slides = [
   {
     icon: "compass-outline" as const,
-    title: "Huduma za Serikali kwa urahisi",
-    body: "Pata maelekezo, checklist, na viungo rasmi bila kuchanganyikiwa."
+    titleSw: "Huduma za Serikali kwa urahisi",
+    titleEn: "Government services made simpler",
+    bodySw: "Pata maelekezo, checklist, na viungo rasmi bila kuchanganyikiwa.",
+    bodyEn: "Find steps, checklists, and official links without getting lost."
   },
   {
     icon: "briefcase-outline" as const,
-    title: "Anzisha biashara yako kwa mpangilio",
-    body: "Fuata hatua za BRELA, TRA, leseni na kumbukumbu muhimu kwa urahisi."
+    titleSw: "Anzisha biashara yako kwa mpangilio",
+    titleEn: "Set up your business with a plan",
+    bodySw: "Fuata hatua za BRELA, TRA, leseni na kumbukumbu muhimu kwa urahisi.",
+    bodyEn: "Follow BRELA, TRA, licence, and compliance steps in one place."
   },
   {
     icon: "alarm-outline" as const,
-    title: "Hifadhi checklist na reminders",
-    body: "Usisahau renewal, deadline au nyaraka muhimu tena."
+    titleSw: "Hifadhi checklist na reminders",
+    titleEn: "Save checklists and reminders",
+    bodySw: "Usisahau renewal, deadline au nyaraka muhimu tena.",
+    bodyEn: "Keep renewal dates, deadlines, and important document follow-ups close."
   }
 ];
 
@@ -39,6 +45,9 @@ const personas: { value: OnboardingPersona; label: string; icon: keyof typeof Io
 export default function OnboardingScreen() {
   const [index, setIndex] = useState(0);
   const [persona, setPersona] = useState<OnboardingPersona>("citizen");
+  const [hasChosenLanguage, setHasChosenLanguage] = useState(false);
+  const language = useAppStore((state) => state.language);
+  const setLanguage = useAppStore((state) => state.setLanguage);
   const completeOnboarding = useAppStore((state) => state.completeOnboarding);
   const slide = slides[index];
   const isLast = index === slides.length - 1;
@@ -54,19 +63,68 @@ export default function OnboardingScreen() {
           <Image source={require("../../assets/logo.png")} style={styles.logo} />
           <View>
             <AppText variant="h2">HudumaGuide TZ</AppText>
-            <AppText muted>Huduma za Serikali na Biashara kwa urahisi.</AppText>
+            <AppText muted>
+              {language === "sw" ? "Huduma za Serikali na Biashara kwa urahisi." : "Government and business services made simpler."}
+            </AppText>
           </View>
         </View>
 
+        {!hasChosenLanguage ? (
+          <>
+            <AppCard style={styles.slide}>
+              <View style={styles.heroIcon}>
+                <Ionicons name="language-outline" size={48} color={colors.green} />
+              </View>
+              <AppText variant="title" style={styles.center}>
+                Chagua lugha / Choose language
+              </AppText>
+              <AppText muted style={styles.center}>
+                Unaweza kubadilisha lugha baadaye kwenye Profile.
+                {"\n"}
+                You can change this later in Profile.
+              </AppText>
+              <View style={styles.languageChoices}>
+                {[
+                  { value: "sw" as Language, title: "Kiswahili", subtitle: "Endelea kwa Kiswahili" },
+                  { value: "en" as Language, title: "English", subtitle: "Continue in English" }
+                ].map((item) => (
+                  <Pressable
+                    key={item.value}
+                    accessibilityRole="button"
+                    accessibilityLabel={item.title}
+                    accessibilityState={{ selected: language === item.value }}
+                    onPress={() => {
+                      setLanguage(item.value);
+                      setHasChosenLanguage(true);
+                      setIndex(0);
+                    }}
+                    style={({ pressed }) => [styles.languageChoice, language === item.value && styles.languageChoiceActive, pressed && styles.pressed]}
+                  >
+                    <Ionicons name={item.value === "sw" ? "chatbubble-ellipses-outline" : "globe-outline"} size={22} color={language === item.value ? colors.surface : colors.green} />
+                    <View style={styles.flex}>
+                      <AppText variant="h3" color={language === item.value ? colors.surface : colors.text}>
+                        {item.title}
+                      </AppText>
+                      <AppText variant="small" color={language === item.value ? colors.surface : colors.textMuted}>
+                        {item.subtitle}
+                      </AppText>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            </AppCard>
+          </>
+        ) : (
+          <>
         <AppCard style={styles.slide}>
           <View style={styles.heroIcon}>
             <Ionicons name={slide.icon} size={48} color={colors.green} />
           </View>
           <AppText variant="title" style={styles.center}>
-            {slide.title}
+            {language === "sw" ? slide.titleSw : slide.titleEn}
           </AppText>
           <AppText muted style={styles.center}>
-            {slide.body}
+            {language === "sw" ? slide.bodySw : slide.bodyEn}
           </AppText>
         </AppCard>
 
@@ -93,7 +151,7 @@ export default function OnboardingScreen() {
         <View style={styles.dots}>
           {slides.map((item, slideIndex) => (
             <Pressable
-              key={item.title}
+              key={item.titleEn}
               accessibilityRole="button"
               accessibilityLabel={`Slide ${slideIndex + 1}`}
               onPress={() => setIndex(slideIndex)}
@@ -104,12 +162,14 @@ export default function OnboardingScreen() {
 
         <View style={styles.actions}>
           <AppButton
-            title={isLast ? "Anza sasa" : "Endelea"}
+            title={isLast ? (language === "sw" ? "Anza sasa" : "Start now") : language === "sw" ? "Endelea" : "Continue"}
             icon={isLast ? "arrow-forward-outline" : "chevron-forward-outline"}
             onPress={() => (isLast ? finish() : setIndex(index + 1))}
           />
-          <AppButton title="Ruka" variant="ghost" onPress={finish} />
+          <AppButton title={language === "sw" ? "Ruka" : "Skip"} variant="ghost" onPress={finish} />
         </View>
+          </>
+        )}
       </View>
     </Screen>
   );
@@ -149,6 +209,32 @@ const styles = StyleSheet.create({
   },
   center: {
     textAlign: "center"
+  },
+  flex: {
+    flex: 1
+  },
+  languageChoices: {
+    alignSelf: "stretch",
+    gap: spacing.sm
+  },
+  languageChoice: {
+    minHeight: 74,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.md,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  languageChoiceActive: {
+    backgroundColor: colors.green,
+    borderColor: colors.green
+  },
+  pressed: {
+    opacity: 0.82,
+    transform: [{ translateY: 1 }]
   },
   personas: {
     flexDirection: "row",
