@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Image, Pressable, StyleSheet, View } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
@@ -19,17 +19,24 @@ import { serviceGuides } from "@/data/serviceGuides";
 import { useAppStore } from "@/store/useAppStore";
 import { trustNotice, formatDate } from "@/utils/copy";
 import { getExpiringDocuments } from "@/utils/documents";
+import { getGuideFreshness, getGuideSourceConfidence } from "@/utils/guideTrust";
 import { searchGuides } from "@/utils/search";
 
-const quickActions = [
-  { label: "NIDA", slug: "nida-nin-application" },
-  { label: "TIN", slug: "tin-registration" },
-  { label: "Passport", slug: "passport-application" },
-  { label: "Leseni", slug: "driving-licence-renewal" },
-  { label: "Cheti cha kuzaliwa", slug: "birth-certificate-application" },
-  { label: "Business Registration", slug: "business-name-registration" },
-  { label: "Business Licence", slug: "business-licence-application" },
-  { label: "Tax Reminder", slug: "tax-deadline-reminders" }
+type QuickAction = {
+  label: string;
+  slug: string;
+  icon: keyof typeof Ionicons.glyphMap;
+};
+
+const quickActions: QuickAction[] = [
+  { label: "NIDA", slug: "nida-nin-application", icon: "id-card-outline" },
+  { label: "TIN", slug: "tin-registration", icon: "receipt-outline" },
+  { label: "Passport", slug: "passport-application", icon: "airplane-outline" },
+  { label: "Leseni", slug: "driving-licence-renewal", icon: "car-outline" },
+  { label: "Birth cert", slug: "birth-certificate-application", icon: "document-text-outline" },
+  { label: "BRELA", slug: "business-name-registration", icon: "briefcase-outline" },
+  { label: "Licence", slug: "business-licence-application", icon: "storefront-outline" },
+  { label: "Tax date", slug: "tax-deadline-reminders", icon: "calendar-outline" }
 ];
 
 const personaPriority: Record<string, string[]> = {
@@ -62,37 +69,77 @@ export default function HomeScreen() {
   const planProgress = latestPlan ? `${latestPlan.completedStepIds.length}/${latestPlan.roadmap.length}` : null;
   const completedChecklistItems = Object.values(checklistItemsByGuide).reduce((total, items) => total + items.length, 0);
   const expiringDocuments = getExpiringDocuments(userDocuments);
+  const verifiedGuides = serviceGuides.filter((guide) => getGuideFreshness(guide).label === "Verified").length;
+  const averageConfidence = Math.round(
+    serviceGuides.reduce((total, guide) => total + getGuideSourceConfidence(guide).score, 0) / serviceGuides.length
+  );
   const prioritizedQuickActions = useMemo(() => {
     const priority = personaPriority[onboardingPersona ?? "citizen"] ?? [];
-    return [...quickActions].sort((a, b) => priority.indexOf(b.slug) - priority.indexOf(a.slug));
+    const rank = (slug: string) => {
+      const index = priority.indexOf(slug);
+      return index === -1 ? priority.length + 1 : index;
+    };
+    return [...quickActions].sort((a, b) => rank(a.slug) - rank(b.slug));
   }, [onboardingPersona]);
 
   return (
     <Screen>
+      <View style={styles.topBar}>
+        <View style={styles.brand}>
+          <Image source={require("../../assets/logo.png")} style={styles.logo} />
+          <View>
+            <AppText variant="h3">HudumaGuide TZ</AppText>
+            <AppText variant="tiny" muted>
+              {language === "sw" ? "Mwongozo huru wa huduma" : "Independent service guide"}
+            </AppText>
+          </View>
+        </View>
+        <LanguageToggle compact />
+      </View>
+
       <View style={styles.hero}>
         <View style={styles.heroCopy}>
-          <AppText variant="small" color={colors.green} style={styles.kicker}>
-            HudumaGuide TZ
-          </AppText>
-          <AppText variant="title">{language === "sw" ? "Karibu. Unahitaji huduma gani?" : "Welcome. What service do you need?"}</AppText>
+          <AppText variant="title">{language === "sw" ? "Pata hatua sahihi kabla hujaenda ofisini." : "Know the next step before you visit."}</AppText>
           <AppText muted>
             {language === "sw"
-              ? "Tafuta huduma, hifadhi checklist na weka reminders muhimu."
-              : "Search services, save checklists, and set important reminders."}
+              ? "Tafuta huduma, hifadhi checklist, fuatilia nyaraka na weka reminders bila kupoteza taarifa muhimu."
+              : "Search services, save checklists, track documents, and set reminders without losing the thread."}
           </AppText>
         </View>
-        <View style={styles.heroIcon}>
-          <Ionicons name="shield-checkmark-outline" size={32} color={colors.surface} />
-        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={language === "sw" ? "Uliza Msaidizi" : "Ask Msaidizi"}
+          onPress={() => router.push("/msaidizi")}
+          style={({ pressed }) => [styles.assistantBubble, pressed && styles.pressed]}
+        >
+          <Ionicons name="chatbubble-ellipses-outline" size={22} color={colors.surface} />
+        </Pressable>
       </View>
-      <LanguageToggle compact />
 
       <TextField
         value={query}
         onChangeText={setQuery}
-        placeholder="Unahitaji huduma gani?"
+        placeholder={language === "sw" ? "NIDA, TIN, leseni, passport..." : "NIDA, TIN, licence, passport..."}
         accessibilityLabel="Search services"
       />
+
+      <AppCard style={styles.trustCard}>
+        <View style={styles.trustHeader}>
+          <View style={styles.trustIcon}>
+            <Ionicons name="shield-checkmark-outline" size={22} color={colors.green} />
+          </View>
+          <View style={styles.trustCopy}>
+            <AppText variant="h3">{language === "sw" ? "Trust status" : "Trust status"}</AppText>
+            <AppText variant="small" muted>
+              {language === "sw" ? "Chanzo, tarehe ya review na link rasmi hukaguliwa." : "Sources, review dates, and official links are checked."}
+            </AppText>
+          </View>
+        </View>
+        <View style={styles.trustStats}>
+          <Pill label={`${verifiedGuides}/${serviceGuides.length} verified`} tone="success" />
+          <Pill label={`${averageConfidence}% source score`} tone={averageConfidence >= 85 ? "success" : "warning"} />
+        </View>
+      </AppCard>
 
       <View style={styles.metrics}>
         <MetricTile
@@ -163,6 +210,9 @@ export default function HomeScreen() {
             onPress={() => router.push(`/services/${action.slug}`)}
             style={({ pressed }) => [styles.quickAction, pressed && styles.pressed]}
           >
+            <View style={styles.quickIcon}>
+              <Ionicons name={action.icon} size={18} color={colors.green} />
+            </View>
             <AppText variant="small" style={styles.quickText}>
               {action.label}
             </AppText>
@@ -241,25 +291,65 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md
+  },
+  brand: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    flexShrink: 1
+  },
+  logo: {
+    width: 42,
+    height: 42,
+    borderRadius: 8
+  },
   hero: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.lg,
+    paddingVertical: spacing.sm
+  },
+  heroCopy: {
+    flex: 1,
+    gap: spacing.sm
+  },
+  assistantBubble: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: colors.green,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  trustCard: {
+    gap: spacing.md
+  },
+  trustHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md
   },
-  heroCopy: {
-    flex: 1,
-    gap: spacing.xs
-  },
-  kicker: {
-    fontWeight: "900"
-  },
-  heroIcon: {
-    width: 58,
-    height: 58,
-    borderRadius: 18,
-    backgroundColor: colors.green,
+  trustIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 8,
+    backgroundColor: colors.greenSoft,
     alignItems: "center",
     justifyContent: "center"
+  },
+  trustCopy: {
+    flex: 1,
+    gap: 2
+  },
+  trustStats: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm
   },
   quickGrid: {
     flexDirection: "row",
@@ -277,20 +367,34 @@ const styles = StyleSheet.create({
     gap: spacing.md
   },
   quickAction: {
-    minHeight: 42,
-    borderRadius: 12,
+    minHeight: 68,
+    width: "23%",
+    minWidth: 76,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs
+  },
+  quickIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: colors.greenSoft,
+    alignItems: "center",
     justifyContent: "center"
   },
   pressed: {
-    opacity: 0.75
+    opacity: 0.78,
+    transform: [{ translateY: 1 }]
   },
   quickText: {
-    fontWeight: "800"
+    fontWeight: "800",
+    textAlign: "center"
   },
   stack: {
     gap: spacing.md

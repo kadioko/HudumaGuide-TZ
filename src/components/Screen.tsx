@@ -33,10 +33,16 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    width: "100%",
+    maxWidth: 940,
+    alignSelf: "center",
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md
   },
   scrollContent: {
+    width: "100%",
+    maxWidth: 940,
+    alignSelf: "center",
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: 110,

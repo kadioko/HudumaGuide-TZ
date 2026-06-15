@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { router } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
 import { EmptyState } from "@/components/EmptyState";
 import { AppButton } from "@/components/AppButton";
@@ -12,6 +14,7 @@ import { ServiceCard } from "@/components/ServiceCard";
 import { TextField } from "@/components/TextField";
 import { colors, radii, spacing } from "@/constants/theme";
 import { serviceCategories } from "@/data/serviceCategories";
+import { serviceGuides } from "@/data/serviceGuides";
 import { trackAnalyticsEvent } from "@/services/analyticsService";
 import { useAppStore } from "@/store/useAppStore";
 import { searchGuides, searchSuggestions } from "@/utils/search";
@@ -22,6 +25,7 @@ export default function ServicesScreen() {
   const language = useAppStore((state) => state.language);
   const userProfile = useAppStore((state) => state.userProfile);
   const results = useMemo(() => searchGuides(query, categoryId), [query, categoryId]);
+  const selectedCategory = serviceCategories.find((category) => category.id === categoryId);
   const lastTrackedQuery = useRef("");
 
   useEffect(() => {
@@ -44,17 +48,34 @@ export default function ServicesScreen() {
 
   return (
     <Screen>
-      <SectionHeader
-        title={language === "sw" ? "HudumaGuide TZ" : "Government Services"}
-        subtitle={language === "sw" ? "Tafuta huduma kwa Kiswahili au English." : "Search in Swahili or English."}
-      />
-      <LanguageToggle compact />
-      <TextField
-        value={query}
-        onChangeText={setQuery}
-        placeholder="NIDA, TIN, leseni, cheti, BRELA..."
-        accessibilityLabel="Search service guides"
-      />
+      <View style={styles.topBar}>
+        <SectionHeader
+          title={language === "sw" ? "Tafuta huduma" : "Find a service"}
+          subtitle={language === "sw" ? "NIDA, TRA, BRELA, RITA, leseni na zaidi." : "NIDA, TRA, BRELA, RITA, licences, and more."}
+        />
+        <LanguageToggle compact />
+      </View>
+
+      <AppCard style={styles.searchPanel}>
+        <View style={styles.searchHeader}>
+          <View style={styles.searchIcon}>
+            <Ionicons name="search-outline" size={21} color={colors.green} />
+          </View>
+          <View style={styles.searchCopy}>
+            <AppText variant="h3">{language === "sw" ? "Unafuatilia nini leo?" : "What are you sorting out today?"}</AppText>
+            <AppText variant="small" muted>
+              {language === "sw" ? `${serviceGuides.length} guides zipo kwa beta.` : `${serviceGuides.length} beta guides available.`}
+            </AppText>
+          </View>
+        </View>
+        <TextField
+          value={query}
+          onChangeText={setQuery}
+          placeholder={language === "sw" ? "NIDA, TIN, leseni, cheti, BRELA..." : "NIDA, TIN, licence, certificate, BRELA..."}
+          accessibilityLabel="Search service guides"
+        />
+      </AppCard>
+
       <View style={styles.suggestionRow}>
         {searchSuggestions.slice(0, 6).map((suggestion) => (
           <Pressable
@@ -85,9 +106,17 @@ export default function ServicesScreen() {
       </ScrollView>
 
       <View style={styles.results}>
-        <AppText variant="small" muted>
-          {language === "sw" ? `${results.length} guide zimepatikana` : `${results.length} guides found`}
-        </AppText>
+        <View style={styles.resultHeader}>
+          <View>
+            <AppText variant="h3">{selectedCategory ? (language === "sw" ? selectedCategory.titleSw : selectedCategory.titleEn) : language === "sw" ? "Guide zote" : "All guides"}</AppText>
+            <AppText variant="small" muted>
+              {language === "sw" ? `${results.length} guide zimepatikana` : `${results.length} guides found`}
+            </AppText>
+          </View>
+          {query || categoryId ? (
+            <AppButton title={language === "sw" ? "Futa" : "Clear"} variant="ghost" onPress={() => { setQuery(""); setCategoryId(undefined); }} />
+          ) : null}
+        </View>
         {results.length ? (
           results.map((guide) => <ServiceCard key={guide.id} guide={guide} language={language} />)
         ) : (
@@ -113,6 +142,32 @@ export default function ServicesScreen() {
 }
 
 const styles = StyleSheet.create({
+  topBar: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: spacing.md
+  },
+  searchPanel: {
+    gap: spacing.md
+  },
+  searchHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  searchIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: radii.sm,
+    backgroundColor: colors.greenSoft,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  searchCopy: {
+    flex: 1,
+    gap: 2
+  },
   categoryRow: {
     gap: spacing.sm,
     paddingRight: spacing.lg
@@ -137,6 +192,12 @@ const styles = StyleSheet.create({
     opacity: 0.72
   },
   results: {
+    gap: spacing.md
+  },
+  resultHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: spacing.md
   }
 });

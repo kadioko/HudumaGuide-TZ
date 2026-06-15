@@ -12,10 +12,11 @@ type MetricTileProps = {
 
 export function MetricTile({ label, value, icon, tone = "green" }: MetricTileProps) {
   const accent = tone === "blue" ? colors.blue : tone === "gold" ? colors.gold : colors.green;
+  const soft = tone === "blue" ? colors.blueSoft : tone === "gold" ? colors.goldSoft : colors.greenSoft;
 
   return (
     <View style={styles.tile}>
-      <View style={[styles.icon, { backgroundColor: `${accent}18` }]}>
+      <View style={[styles.icon, { backgroundColor: soft }]}>
         <Ionicons name={icon} size={18} color={accent} />
       </View>
       <AppText variant="h2">{value}</AppText>
@@ -29,7 +30,7 @@ export function MetricTile({ label, value, icon, tone = "green" }: MetricTilePro
 const styles = StyleSheet.create({
   tile: {
     flex: 1,
-    minHeight: 118,
+    minHeight: 104,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,

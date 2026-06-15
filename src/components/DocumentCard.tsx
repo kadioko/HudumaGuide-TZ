@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Alert, StyleSheet, View } from "react-native";
-import { colors, spacing } from "@/constants/theme";
+import { colors, radii, spacing } from "@/constants/theme";
 import { UserDocument } from "@/types";
 import { formatDate } from "@/utils/copy";
 import { getDocumentRenewalChecklist, getDocumentStatus } from "@/utils/documents";
@@ -137,8 +137,8 @@ const styles = StyleSheet.create({
   icon: {
     width: 44,
     height: 44,
-    borderRadius: 14,
-    backgroundColor: colors.surfaceMuted,
+    borderRadius: radii.md,
+    backgroundColor: colors.greenSoft,
     alignItems: "center",
     justifyContent: "center"
   },

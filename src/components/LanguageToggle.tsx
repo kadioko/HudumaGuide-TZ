@@ -1,7 +1,6 @@
-import { StyleSheet, View } from "react-native";
-import { spacing } from "@/constants/theme";
+import { Pressable, StyleSheet, View } from "react-native";
+import { colors, radii, spacing } from "@/constants/theme";
 import { useAppStore } from "@/store/useAppStore";
-import { AppButton } from "./AppButton";
 import { AppText } from "./AppText";
 
 type LanguageToggleProps = {
@@ -20,18 +19,26 @@ export function LanguageToggle({ compact }: LanguageToggleProps) {
         </AppText>
       ) : null}
       <View style={styles.row}>
-        <AppButton
-          title="Kiswahili"
-          variant={language === "sw" ? "primary" : "secondary"}
-          onPress={() => setLanguage("sw")}
-          style={styles.choice}
-        />
-        <AppButton
-          title="English"
-          variant={language === "en" ? "primary" : "secondary"}
-          onPress={() => setLanguage("en")}
-          style={styles.choice}
-        />
+        {[
+          { id: "sw" as const, label: compact ? "SW" : "Kiswahili" },
+          { id: "en" as const, label: compact ? "EN" : "English" }
+        ].map((option) => {
+          const active = language === option.id;
+          return (
+            <Pressable
+              key={option.id}
+              accessibilityRole="button"
+              accessibilityLabel={option.label}
+              accessibilityState={{ selected: active }}
+              onPress={() => setLanguage(option.id)}
+              style={({ pressed }) => [styles.choice, active && styles.activeChoice, pressed && styles.pressed]}
+            >
+              <AppText variant="small" color={active ? colors.surface : colors.green} style={styles.choiceText}>
+                {option.label}
+              </AppText>
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
@@ -46,9 +53,28 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    gap: spacing.sm
+    gap: spacing.xs,
+    padding: 3,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.md,
+    backgroundColor: colors.surfaceMuted
   },
   choice: {
-    flex: 1
+    flex: 1,
+    minHeight: 38,
+    borderRadius: radii.sm,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.md
+  },
+  activeChoice: {
+    backgroundColor: colors.green
+  },
+  pressed: {
+    opacity: 0.8
+  },
+  choiceText: {
+    fontWeight: "900"
   }
 });

@@ -146,16 +146,25 @@ export default function ServiceDetailsScreen() {
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <Pill label={pick(language, category?.titleSw ?? "", category?.titleEn ?? "")} />
-        <GuideFreshnessBadge guide={selectedGuide} />
+      <AppCard style={styles.guideHero}>
+        <View style={styles.heroTop}>
+          <View style={styles.categoryIcon}>
+            <Ionicons name={(category?.icon ?? "document-text-outline") as keyof typeof Ionicons.glyphMap} size={23} color={colors.green} />
+          </View>
+          <View style={styles.flex}>
+            <View style={styles.inlineActions}>
+              <Pill label={pick(language, category?.titleSw ?? "", category?.titleEn ?? "")} />
+              <GuideFreshnessBadge guide={selectedGuide} />
+            </View>
+          </View>
+        </View>
+        <AppText variant="title">{pick(language, selectedGuide.titleSw, selectedGuide.titleEn)}</AppText>
+        <AppText muted>{pick(language, selectedGuide.summarySw, selectedGuide.summaryEn)}</AppText>
         <View style={styles.inlineActions}>
           <Pill label="Kiswahili" active={language === "sw"} onPress={() => setScreenLanguage(screenKey, "sw")} />
           <Pill label="English" active={language === "en"} onPress={() => setScreenLanguage(screenKey, "en")} />
         </View>
-        <AppText variant="title">{pick(language, selectedGuide.titleSw, selectedGuide.titleEn)}</AppText>
-        <AppText muted>{pick(language, selectedGuide.summarySw, selectedGuide.summaryEn)}</AppText>
-      </View>
+      </AppCard>
 
       <InfoBanner title="Independent guide" body={trustNotice} tone="warning" />
       <InfoBanner
@@ -303,18 +312,18 @@ export default function ServiceDetailsScreen() {
       </AppCard>
 
       <AppCard>
-        <SectionHeader title="Official source" subtitle={selectedGuide.physicalLocationNote} />
-        <AppButton title="Fungua tovuti rasmi" icon="open-outline" onPress={openOfficialPortal} />
+        <SectionHeader title={language === "sw" ? "Chanzo rasmi" : "Official source"} subtitle={selectedGuide.physicalLocationNote} />
+        <AppButton title={language === "sw" ? "Fungua tovuti rasmi" : "Open official portal"} icon="open-outline" onPress={openOfficialPortal} />
       </AppCard>
 
       <View style={styles.buttonGrid}>
-        <AppButton title="Share" icon="logo-whatsapp" variant="secondary" onPress={shareGuide} style={styles.gridButton} />
-        <AppButton title={language === "sw" ? "Share checklist" : "Share checklist"} icon="share-social-outline" variant="secondary" onPress={shareChecklist} style={styles.gridButton} />
+        <AppButton title={language === "sw" ? "Tuma guide" : "Share guide"} icon="logo-whatsapp" variant="secondary" onPress={shareGuide} style={styles.gridButton} />
+        <AppButton title={language === "sw" ? "Tuma checklist" : "Share checklist"} icon="share-social-outline" variant="secondary" onPress={shareChecklist} style={styles.gridButton} />
       </View>
 
       <View style={styles.buttonGrid}>
         <AppButton
-          title="Report outdated info"
+          title={language === "sw" ? "Ripoti taarifa isiyo sahihi" : "Report outdated info"}
           icon="flag-outline"
           variant="secondary"
           onPress={() => router.push({ pathname: "/feedback", params: { serviceSlug: selectedGuide.slug } })}
@@ -328,8 +337,21 @@ export default function ServiceDetailsScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    gap: spacing.sm
+  guideHero: {
+    gap: spacing.md
+  },
+  heroTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  categoryIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: colors.greenSoft,
+    alignItems: "center",
+    justifyContent: "center"
   },
   scoreHeader: {
     flexDirection: "row",
@@ -339,8 +361,8 @@ const styles = StyleSheet.create({
   scoreIcon: {
     width: 44,
     height: 44,
-    borderRadius: 14,
-    backgroundColor: colors.surfaceMuted,
+    borderRadius: 8,
+    backgroundColor: colors.greenSoft,
     alignItems: "center",
     justifyContent: "center"
   },

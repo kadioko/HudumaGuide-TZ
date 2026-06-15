@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
-import { StyleSheet, View } from "react-native";
-import { colors, spacing } from "@/constants/theme";
+import { Pressable, StyleSheet, View } from "react-native";
+import { colors, radii, spacing } from "@/constants/theme";
 import { serviceCategories } from "@/data/serviceCategories";
 import { ServiceGuide, Language } from "@/types";
 import { pick } from "@/utils/copy";
@@ -20,36 +20,45 @@ export function ServiceCard({ guide, language }: ServiceCardProps) {
 
   return (
     <Link href={`/services/${guide.slug}`} asChild>
-      <AppCard style={styles.card}>
-        <View style={styles.header}>
-          <View style={styles.iconBox}>
-            <Ionicons name={(category?.icon ?? "document-text-outline") as keyof typeof Ionicons.glyphMap} size={22} color={colors.green} />
+      <Pressable accessibilityRole="link" style={({ pressed }) => [styles.pressable, pressed && styles.pressed]}>
+        <AppCard style={styles.card}>
+          <View style={styles.header}>
+            <View style={styles.iconBox}>
+              <Ionicons name={(category?.icon ?? "document-text-outline") as keyof typeof Ionicons.glyphMap} size={22} color={colors.green} />
+            </View>
+            <View style={styles.titleWrap}>
+              <AppText variant="h3">{pick(language, guide.titleSw, guide.titleEn)}</AppText>
+              <AppText variant="small" muted>
+                {pick(language, category?.titleSw ?? "", category?.titleEn ?? "")}
+              </AppText>
+            </View>
+            <View style={styles.chevron}>
+              <Ionicons name="chevron-forward" size={17} color={colors.green} />
+            </View>
           </View>
-          <View style={styles.titleWrap}>
-            <AppText variant="h3">{pick(language, guide.titleSw, guide.titleEn)}</AppText>
-            <AppText variant="small" muted>
-              {pick(language, category?.titleSw ?? "", category?.titleEn ?? "")}
-            </AppText>
-          </View>
-        </View>
-        <AppText muted>{pick(language, guide.summarySw, guide.summaryEn)}</AppText>
-        <View style={styles.footer}>
-          <Pill label={guide.complexity} />
-          <GuideFreshnessBadge guide={guide} />
-          <Pill label={guide.estimatedTime.split(" ").slice(0, 4).join(" ")} />
-          <View style={styles.viewSteps}>
+          <AppText muted>{pick(language, guide.summarySw, guide.summaryEn)}</AppText>
+          <View style={styles.footer}>
+            <Pill label={guide.complexity} />
+            <GuideFreshnessBadge guide={guide} />
+            <Pill label={guide.estimatedTime.split(" ").slice(0, 4).join(" ")} />
             <AppText variant="small" color={colors.green} style={styles.viewText}>
-              {language === "sw" ? "Angalia hatua" : "View steps"}
+              {language === "sw" ? "Hatua" : "Steps"}
             </AppText>
-            <Ionicons name="chevron-forward" size={16} color={colors.green} />
           </View>
-        </View>
-      </AppCard>
+        </AppCard>
+      </Pressable>
     </Link>
   );
 }
 
 const styles = StyleSheet.create({
+  pressable: {
+    borderRadius: radii.md
+  },
+  pressed: {
+    opacity: 0.82,
+    transform: [{ translateY: 1 }]
+  },
   card: {
     gap: spacing.md
   },
@@ -70,19 +79,22 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2
   },
+  chevron: {
+    width: 30,
+    height: 30,
+    borderRadius: radii.sm,
+    backgroundColor: colors.greenSoft,
+    alignItems: "center",
+    justifyContent: "center"
+  },
   footer: {
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "center",
     gap: spacing.sm
   },
-  viewSteps: {
-    marginLeft: "auto",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2
-  },
   viewText: {
-    fontWeight: "800"
+    marginLeft: "auto",
+    fontWeight: "900"
   }
 });

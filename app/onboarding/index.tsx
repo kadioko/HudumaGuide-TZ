@@ -1,12 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Image, Pressable, StyleSheet, View } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
 import { Screen } from "@/components/Screen";
-import { colors, spacing } from "@/constants/theme";
+import { colors, radii, spacing } from "@/constants/theme";
 import { useAppStore } from "@/store/useAppStore";
 import { OnboardingPersona } from "@/types";
 
@@ -51,9 +51,7 @@ export default function OnboardingScreen() {
     <Screen scroll={false}>
       <View style={styles.container}>
         <View style={styles.brand}>
-          <View style={styles.logo}>
-            <Ionicons name="shield-checkmark-outline" size={26} color={colors.surface} />
-          </View>
+          <Image source={require("../../assets/logo.png")} style={styles.logo} />
           <View>
             <AppText variant="h2">HudumaGuide TZ</AppText>
             <AppText muted>Huduma za Serikali na Biashara kwa urahisi.</AppText>
@@ -132,10 +130,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 52,
     height: 52,
-    borderRadius: 16,
-    backgroundColor: colors.green,
-    alignItems: "center",
-    justifyContent: "center"
+    borderRadius: radii.md
   },
   slide: {
     flex: 1,
@@ -147,8 +142,8 @@ const styles = StyleSheet.create({
   heroIcon: {
     width: 96,
     height: 96,
-    borderRadius: 28,
-    backgroundColor: colors.surfaceMuted,
+    borderRadius: radii.lg,
+    backgroundColor: colors.greenSoft,
     alignItems: "center",
     justifyContent: "center"
   },
@@ -165,8 +160,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.xs,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 999,
+    borderColor: colors.borderStrong,
+    borderRadius: radii.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm
   },

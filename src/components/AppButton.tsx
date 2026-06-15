@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   },
   secondary: {
     backgroundColor: colors.surface,
-    borderColor: colors.border
+    borderColor: colors.borderStrong
   },
   ghost: {
     backgroundColor: "transparent",
@@ -85,12 +85,15 @@ const styles = StyleSheet.create({
     borderColor: colors.red
   },
   pressed: {
-    opacity: 0.76
+    opacity: 0.82,
+    transform: [{ translateY: 1 }]
   },
   disabled: {
     opacity: 0.5
   },
   label: {
-    fontWeight: "800"
+    fontWeight: "800",
+    textAlign: "center",
+    flexShrink: 1
   }
 });

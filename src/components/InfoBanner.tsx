@@ -12,7 +12,7 @@ type InfoBannerProps = {
 export function InfoBanner({ title, body, tone = "info" }: InfoBannerProps) {
   const iconColor = tone === "warning" ? colors.warning : tone === "success" ? colors.success : colors.blue;
   return (
-    <View style={styles.banner}>
+    <View style={[styles.banner, styles[tone]]}>
       <Ionicons name="shield-checkmark-outline" size={22} color={iconColor} />
       <View style={styles.copy}>
         {title ? <AppText variant="small" style={styles.title}>{title}</AppText> : null}
@@ -31,9 +31,18 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     backgroundColor: colors.surfaceMuted,
     padding: spacing.md
+  },
+  info: {
+    backgroundColor: colors.blueSoft
+  },
+  warning: {
+    backgroundColor: colors.goldSoft
+  },
+  success: {
+    backgroundColor: colors.greenSoft
   },
   copy: {
     flex: 1,

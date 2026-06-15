@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Alert, StyleSheet, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { AppButton } from "@/components/AppButton";
 import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
@@ -11,7 +12,7 @@ import { RecordSyncPill } from "@/components/RecordSyncPill";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SyncBanner } from "@/components/SyncBanner";
-import { spacing } from "@/constants/theme";
+import { colors, spacing } from "@/constants/theme";
 import { useAppStore } from "@/store/useAppStore";
 import { formatDate } from "@/utils/copy";
 
@@ -57,13 +58,22 @@ export default function RemindersScreen() {
 
   return (
     <Screen>
-      <SectionHeader
-        title={language === "sw" ? "Reminders" : "Reminders"}
-        subtitle={language === "sw" ? "Kodi, leseni, documents na follow-up." : "Tax, licence, documents, and follow-ups."}
-      />
+      <AppCard style={styles.hero}>
+        <View style={styles.heroIcon}>
+          <Ionicons name="alarm-outline" size={24} color={colors.green} />
+        </View>
+        <View style={styles.flex}>
+          <SectionHeader
+            title={language === "sw" ? "Vikumbusho" : "Reminders"}
+            subtitle={language === "sw" ? "Kodi, leseni, nyaraka na follow-up." : "Tax, licence, documents, and follow-ups."}
+          />
+        </View>
+      </AppCard>
       <SyncBanner />
-      <AppButton title={language === "sw" ? "Create reminder" : "Create reminder"} icon="add-circle-outline" onPress={() => router.push("/reminders/create")} />
-      <AppButton title="Notification settings" icon="notifications-outline" variant="secondary" onPress={() => router.push("/notifications/settings")} />
+      <View style={styles.actions}>
+        <AppButton title={language === "sw" ? "Weka reminder" : "Create reminder"} icon="add-circle-outline" onPress={() => router.push("/reminders/create")} style={styles.actionButton} />
+        <AppButton title={language === "sw" ? "Notifications" : "Notifications"} icon="notifications-outline" variant="secondary" onPress={() => router.push("/notifications/settings")} style={styles.actionButton} />
+      </View>
 
       <View style={styles.metrics}>
         <MetricTile label={language === "sw" ? "Overdue" : "Overdue"} value={String(reminderGroups.overdue.length)} icon="alert-circle-outline" tone="gold" />
@@ -100,9 +110,9 @@ export default function RemindersScreen() {
                 variant="ghost"
                 icon="trash-outline"
                 onPress={() =>
-                  Alert.alert("Delete reminder", "Remove this reminder?", [
-                    { text: "Cancel", style: "cancel" },
-                    { text: "Delete", style: "destructive", onPress: () => deleteReminder(reminder.id) }
+                  Alert.alert(language === "sw" ? "Futa reminder" : "Delete reminder", language === "sw" ? "Ondoa reminder hii?" : "Remove this reminder?", [
+                    { text: language === "sw" ? "Ghairi" : "Cancel", style: "cancel" },
+                    { text: language === "sw" ? "Futa" : "Delete", style: "destructive", onPress: () => deleteReminder(reminder.id) }
                   ])
                 }
               />
@@ -115,7 +125,7 @@ export default function RemindersScreen() {
               title={language === "sw" ? "Hakuna reminders hapa" : "No reminders here"}
               body={language === "sw" ? "Badilisha filter au weka reminder kwa deadline, renewal au follow-up." : "Change the filter or create reminders for deadlines, renewals, or follow-ups."}
             />
-            <AppButton title="Create first reminder" icon="add-circle-outline" onPress={() => router.push("/reminders/create")} />
+            <AppButton title={language === "sw" ? "Weka reminder ya kwanza" : "Create first reminder"} icon="add-circle-outline" onPress={() => router.push("/reminders/create")} />
           </>
         )}
       </View>
@@ -124,6 +134,29 @@ export default function RemindersScreen() {
 }
 
 const styles = StyleSheet.create({
+  hero: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  heroIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: colors.greenSoft,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  flex: {
+    flex: 1
+  },
+  actions: {
+    flexDirection: "row",
+    gap: spacing.sm
+  },
+  actionButton: {
+    flex: 1
+  },
   stack: {
     gap: spacing.md
   },
