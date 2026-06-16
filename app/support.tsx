@@ -126,6 +126,7 @@ export default function SupportScreen() {
       <AppCard>
         <AppText variant="h3">Quick actions</AppText>
         <AppButton title="Report outdated guide info" icon="flag-outline" variant="secondary" onPress={() => router.push("/feedback")} />
+        <AppButton title="Delete account instructions" icon="trash-outline" variant="secondary" onPress={() => router.push("/account-deletion" as never)} />
         <AppButton title="Share beta diagnostics" icon="share-social-outline" variant="secondary" onPress={shareDiagnostics} />
         <AppButton title="Open email draft" icon="mail-outline" variant="secondary" onPress={openEmailDraft} />
       </AppCard>

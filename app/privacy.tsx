@@ -1,3 +1,5 @@
+import { router } from "expo-router";
+import { AppButton } from "@/components/AppButton";
 import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
 import { InfoBanner } from "@/components/InfoBanner";
@@ -28,6 +30,7 @@ export default function PrivacyScreen() {
       <AppCard>
         <AppText variant="h3">Your controls</AppText>
         <AppText muted>You can export your app data or request account deletion from Profile. Account deletion removes user-owned app rows through Supabase cascading deletes.</AppText>
+        <AppButton title="Delete account instructions" icon="trash-outline" variant="secondary" onPress={() => router.push("/account-deletion" as never)} />
       </AppCard>
     </Screen>
   );

@@ -46,6 +46,7 @@ export default function RootLayout() {
         <Stack.Screen name="checklists" options={{ title: "Saved Checklists" }} />
         <Stack.Screen name="msaidizi" options={{ title: "Msaidizi" }} />
         <Stack.Screen name="sync-review" options={{ title: "Sync Review" }} />
+        <Stack.Screen name="account-deletion" options={{ title: "Delete Account" }} />
         <Stack.Screen name="beta-readiness" options={{ title: "Beta Readiness" }} />
         <Stack.Screen name="admin/index" options={{ title: "Admin Console" }} />
         <Stack.Screen name="admin/categories" options={{ title: "Service Categories" }} />
