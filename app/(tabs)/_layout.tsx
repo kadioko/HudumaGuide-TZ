@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import { ColorValue, StyleSheet, View } from "react-native";
+import { ColorValue, Platform, StyleSheet, View } from "react-native";
 import { colors, radii, spacing } from "@/constants/theme";
 import { useAppStore } from "@/store/useAppStore";
 
@@ -45,7 +45,18 @@ export default function TabsLayout() {
       <Tabs.Screen name="services" options={{ title: language === "sw" ? "Huduma" : "Services", tabBarIcon: tabIcon("search-outline") }} />
       <Tabs.Screen name="biashara" options={{ title: language === "sw" ? "Biashara" : "Business", tabBarIcon: tabIcon("briefcase-outline") }} />
       <Tabs.Screen name="documents" options={{ title: language === "sw" ? "Nyaraka" : "Vault", tabBarIcon: tabIcon("folder-open-outline") }} />
-      <Tabs.Screen name="profile" options={{ title: language === "sw" ? "Wasifu" : "Profile", tabBarIcon: tabIcon("person-outline") }} />
+      <Tabs.Screen
+        name="profile"
+        options={{ title: language === "sw" ? "Wasifu" : "Profile", tabBarIcon: tabIcon("person-outline") }}
+        listeners={{
+          tabPress: (event) => {
+            if (Platform.OS === "web" && typeof window !== "undefined") {
+              event.preventDefault();
+              window.location.assign("/profile");
+            }
+          }
+        }}
+      />
       <Tabs.Screen name="reminders" options={{ href: null }} />
       <Tabs.Screen name="error" options={{ href: null }} />
     </Tabs>
