@@ -15,7 +15,7 @@ Do not ship a guide update unless official-source references and review status a
 
 Supabase Free projects can pause after inactivity. For production reliability, move the project to Supabase Pro. Supabase documents that Pro projects cannot currently be paused, while Free projects are subject to inactivity pausing.
 
-For Free-plan beta testing, this repo includes `.github/workflows/supabase-keepalive.yml`, which pings the public `service_guides` REST endpoint every Monday and Thursday. Add these GitHub repository secrets before enabling the workflow:
+For Free-plan beta testing, this repo includes `.github/workflows/supabase-keepalive.yml`, which pings the public `service_guides` REST endpoint daily with retry/timeout settings. Add these GitHub repository secrets before enabling the workflow:
 
 ```text
 EXPO_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
