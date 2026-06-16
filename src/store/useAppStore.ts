@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 import { create } from "zustand";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { getCurrentSession, loadRemoteUserData, saveRemoteUserData, signOut, updateProfile } from "@/services/accountService";
@@ -26,7 +27,7 @@ import { ChecklistState, getSyncConflictReasons, mergeRemoteWithLocal, upsertSyn
 
 const STORAGE_KEY = "hudumaguide-tz-store";
 const SYNC_DEBOUNCE_MS = 900;
-const canUseDeviceStorage = typeof window !== "undefined";
+const canUseDeviceStorage = Platform.OS !== "web" || typeof window !== "undefined";
 
 type AppState = {
   isHydrated: boolean;
@@ -434,7 +435,6 @@ if (canUseDeviceStorage) {
     });
 } else {
   isHydrating = false;
-  useAppStore.setState({ isHydrated: true });
 }
 
 useAppStore.subscribe((state) => {

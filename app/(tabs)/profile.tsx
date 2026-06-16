@@ -20,6 +20,7 @@ import { trustNotice } from "@/utils/copy";
 import { colors, spacing } from "@/constants/theme";
 
 export default function ProfileScreen() {
+  const isHydrated = useAppStore((state) => state.isHydrated);
   const language = useAppStore((state) => state.language);
   const userProfile = useAppStore((state) => state.userProfile);
   const syncStatus = useAppStore((state) => state.syncStatus);
@@ -40,15 +41,6 @@ export default function ProfileScreen() {
   const reminders = useAppStore((state) => state.reminders.length);
   const businessPlans = useAppStore((state) => state.businessPlans.length);
   const documents = useAppStore((state) => state.userDocuments.length);
-  const localData = useAppStore((state) => ({
-    language: state.language,
-    savedGuideSlugs: state.savedGuideSlugs,
-    checklistItemsByGuide: state.checklistItemsByGuide,
-    reminders: state.reminders,
-    userDocuments: state.userDocuments,
-    businessPlans: state.businessPlans,
-    feedbackReports: state.feedbackReports
-  }));
   const [fullName, setFullName] = useState(userProfile?.fullName ?? "");
   const [region, setRegion] = useState(userProfile?.region ?? "");
   const [city, setCity] = useState(userProfile?.city ?? "");
@@ -64,6 +56,17 @@ export default function ProfileScreen() {
 
     return () => clearTimeout(timer);
   }, [userProfile]);
+
+  if (!isHydrated) {
+    return (
+      <Screen>
+        <AppCard>
+          <SectionHeader title={language === "sw" ? "Wasifu na mipangilio" : "Profile & settings"} subtitle="HudumaGuide TZ" />
+          <AppText muted>{language === "sw" ? "Tunapakia taarifa zako..." : "Loading your settings..."}</AppText>
+        </AppCard>
+      </Screen>
+    );
+  }
 
   async function saveProfile() {
     if (!userProfile) {
@@ -89,6 +92,16 @@ export default function ProfileScreen() {
 
   async function exportData() {
     const analyticsSummary = await getLocalAnalyticsSummary();
+    const state = useAppStore.getState();
+    const localData = {
+      language: state.language,
+      savedGuideSlugs: state.savedGuideSlugs,
+      checklistItemsByGuide: state.checklistItemsByGuide,
+      reminders: state.reminders,
+      userDocuments: state.userDocuments,
+      businessPlans: state.businessPlans,
+      feedbackReports: state.feedbackReports
+    };
     const privacyMetadata = {
       exportedAt: new Date().toISOString(),
       sync: {
