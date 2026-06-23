@@ -14,6 +14,7 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { SyncBanner } from "@/components/SyncBanner";
 import { GuideFreshnessBadge } from "@/components/GuideFreshnessBadge";
 import { colors, spacing } from "@/constants/theme";
+import { getOfficialSourceLabel } from "@/data/officialSources";
 import { serviceCategories } from "@/data/serviceCategories";
 import { useAppStore } from "@/store/useAppStore";
 import { legalTaxNotice, pick, trustNotice } from "@/utils/copy";
@@ -313,6 +314,19 @@ export default function ServiceDetailsScreen() {
 
       <AppCard>
         <SectionHeader title={language === "sw" ? "Chanzo rasmi" : "Official source"} subtitle={selectedGuide.physicalLocationNote} />
+        <AppText variant="small" style={styles.sourceName}>
+          {getOfficialSourceLabel(selectedGuide.officialUrl)}
+        </AppText>
+        <AppText variant="tiny" muted>
+          {selectedGuide.officialUrl}
+        </AppText>
+        {selectedGuide.officialSourceRefs
+          ?.filter((url) => url !== selectedGuide.officialUrl)
+          .map((url) => (
+            <AppText key={url} variant="tiny" muted>
+              {url}
+            </AppText>
+          ))}
         <AppButton title={language === "sw" ? "Fungua tovuti rasmi" : "Open official portal"} icon="open-outline" onPress={openOfficialPortal} />
       </AppCard>
 
@@ -388,5 +402,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm
+  },
+  sourceName: {
+    fontWeight: "800"
   }
 });

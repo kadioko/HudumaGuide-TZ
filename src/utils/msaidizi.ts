@@ -9,7 +9,7 @@ export const msaidiziFallback =
 export type MsaidiziAnswer = {
   text: string;
   guides: ServiceGuide[];
-  citations: { slug: string; title: string; lastVerifiedAt?: string }[];
+  citations: { slug: string; title: string; lastVerifiedAt?: string; officialUrl: string }[];
   confidence: "grounded" | "fallback";
 };
 
@@ -79,7 +79,8 @@ export function answerFromGuideList(question: string, language: Language, guides
     citations: guides.map((guide) => ({
       slug: guide.slug,
       title: pick(language, guide.titleSw, guide.titleEn),
-      lastVerifiedAt: guide.lastVerifiedAt
+      lastVerifiedAt: guide.lastVerifiedAt,
+      officialUrl: guide.officialUrl
     })),
     confidence: "grounded"
   };

@@ -1,7 +1,7 @@
 import { Language } from "@/types";
 
 export const trustNotice =
-  "This is an independent guide. It is not an official government platform. Always confirm final requirements, fees, and procedures through official government channels.";
+  "This is an independent guide. It does not represent any government entity and is not an official government platform. Always confirm final requirements, fees, and procedures through official government channels.";
 
 export const legalTaxNotice =
   "This is general guidance, not legal/tax advice.";
