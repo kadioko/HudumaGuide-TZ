@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { StyleSheet, View } from "react-native";
+import { Linking, StyleSheet, View } from "react-native";
 import { z } from "zod";
 import { AppButton } from "@/components/AppButton";
 import { AppCard } from "@/components/AppCard";
@@ -160,6 +160,10 @@ export default function MsaidiziScreen() {
                   <AppText variant="tiny" muted>
                     Last verified: {citation.lastVerifiedAt || "Needs review"}
                   </AppText>
+                  <AppText variant="tiny" muted>
+                    Official URL: {citation.officialUrl}
+                  </AppText>
+                  <AppButton title="Open official source" icon="open-outline" variant="ghost" compact onPress={() => Linking.openURL(citation.officialUrl)} />
                 </AppCard>
               ))}
               {answer.guides.map((guide) => (
