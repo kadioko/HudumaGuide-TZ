@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { StyleProp, StyleSheet, Text, TextStyle } from "react-native";
+import { StyleProp, StyleSheet, Text, TextProps, TextStyle } from "react-native";
 import { colors, typography } from "@/constants/theme";
 
 type Variant = "title" | "h1" | "h2" | "h3" | "body" | "small" | "tiny";
@@ -10,9 +10,10 @@ type AppTextProps = {
   muted?: boolean;
   color?: string;
   style?: StyleProp<TextStyle>;
+  numberOfLines?: TextProps["numberOfLines"];
 };
 
-export function AppText({ children, variant = "body", muted, color, style }: AppTextProps) {
+export function AppText({ children, variant = "body", muted, color, style, numberOfLines }: AppTextProps) {
   const textStyle: StyleProp<TextStyle> = [
     styles.base,
     styles[variant] as TextStyle,
@@ -22,7 +23,7 @@ export function AppText({ children, variant = "body", muted, color, style }: App
   ];
 
   return (
-    <Text style={textStyle}>{children}</Text>
+    <Text style={textStyle} numberOfLines={numberOfLines}>{children}</Text>
   );
 }
 

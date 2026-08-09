@@ -53,6 +53,31 @@ Implemented:
 - Feedback/support sync migration and category-aware admin review queue.
 - Privacy Policy, Terms of Use, disclaimer, RLS verification guide, launch checklist, and live beta validation plan.
 
+## Android Release Build Status
+
+Status: historical Android upload keystore recovered and verified; production upload is pending secure EAS credential import and a newly signed AAB.
+
+Confirmed release evidence:
+
+- The confirmed Play identity is `com.hudumaguide.tz`; the recovered prior release uses version code `11`.
+- Version `0.1.1` / code `12` is configured for this release.
+- The project is linked to the `kadioko` EAS account and has a production Android App Bundle profile.
+- Production EAS environment variables are configured for the public Supabase runtime values.
+- The prior accepted HudumaGuide bundle uses upload-certificate SHA-1 `4A:01:17:A3:A9:70:EC:A6:96:B7:0B:B4:E2:8F:6D:06:E5:C5:54:3A`.
+- Historical release evidence now includes both `11.aab` and `HudumaGuide-TZ-android-v0.1.0-code9.aab`; each is signed with the expected upload certificate.
+- The matching JKS upload keystore was recovered and verified with alias `upload`. Its passwords must be recovered from the original build setup before it can be imported into EAS.
+- The new EAS Android keystore uses SHA-1 `DE:B0:54:9F:72:18:0B:26:B0:3F:EC:29:0E:78:80:36:BB:04:74:28`; Google Play rejected the build because it is not yet registered as the upload key.
+- Downloaded EAS bundles inspected on 2026-08-09 belong to Budget It, not HudumaGuide TZ, and must not be reused.
+- Play-ready English and Kiswahili notes are maintained in `docs/release-notes.md`.
+
+Next release actions:
+
+1. Recover the historical keystore and key passwords from the original build setup, then import the verified JKS into EAS Credentials.
+2. Create a fresh 0.1.1 / code 12 (or higher) AAB after EAS uses the historical upload key; the existing code-12 AAB is signed with the wrong key.
+3. Upload to the correct Play track and review the pre-launch report.
+
+See `docs/android-release-build.md` for the complete, repeatable release procedure.
+
 ## Product Principles
 
 - Trust before growth: clear disclaimers, verified content, and transparent source language.
