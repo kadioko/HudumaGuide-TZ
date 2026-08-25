@@ -42,6 +42,26 @@
       "expo-status-bar",
       "expo-updates",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "HudumaGuide TZ needs photo access so you can add existing document images to your private Document Vault.",
+          "cameraPermission": "HudumaGuide TZ uses the camera so you can photograph documents for your private Document Vault.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "HudumaGuide TZ uses Face ID to unlock your saved documents and records on this device."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#0A7A55"
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/splash.png",
