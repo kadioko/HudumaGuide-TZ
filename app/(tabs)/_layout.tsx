@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { ColorValue, Platform, StyleSheet, View } from "react-native";
+import { createRouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import { colors, radii, spacing } from "@/constants/theme";
 import { useAppStore } from "@/store/useAppStore";
 
@@ -18,6 +19,8 @@ function tabIcon(name: IconName) {
   TabIcon.displayName = `TabIcon(${name})`;
   return TabIcon;
 }
+
+export const ErrorBoundary = createRouteErrorBoundary("Tab could not load");
 
 export default function TabsLayout() {
   const language = useAppStore((state) => state.language);
@@ -58,7 +61,6 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen name="reminders" options={{ href: null }} />
-      <Tabs.Screen name="error" options={{ href: null }} />
     </Tabs>
   );
 }

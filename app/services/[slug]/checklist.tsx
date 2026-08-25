@@ -4,6 +4,7 @@ import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
 import { ChecklistRow } from "@/components/ChecklistRow";
 import { ProgressBar } from "@/components/ProgressBar";
+import { createRouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
 import { useAppStore } from "@/store/useAppStore";
@@ -11,6 +12,8 @@ import { pick } from "@/utils/copy";
 import { getGuideBySlug } from "@/utils/search";
 
 const emptyChecklistItems: string[] = [];
+
+export const ErrorBoundary = createRouteErrorBoundary("Service guide could not load");
 
 export default function ServiceChecklistScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();

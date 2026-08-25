@@ -9,6 +9,7 @@ import { ChecklistRow } from "@/components/ChecklistRow";
 import { InfoBanner } from "@/components/InfoBanner";
 import { Pill } from "@/components/Pill";
 import { ProgressBar } from "@/components/ProgressBar";
+import { createRouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SyncBanner } from "@/components/SyncBanner";
@@ -23,6 +24,8 @@ import { getGuideProgress } from "@/utils/progress";
 import { getGuideBySlug } from "@/utils/search";
 
 const emptyChecklistItems: string[] = [];
+
+export const ErrorBoundary = createRouteErrorBoundary("Service guide could not load");
 
 export default function ServiceDetailsScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();

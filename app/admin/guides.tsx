@@ -5,6 +5,7 @@ import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
 import { InfoBanner } from "@/components/InfoBanner";
 import { Pill } from "@/components/Pill";
+import { createRouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
 import { TextField } from "@/components/TextField";
@@ -14,6 +15,8 @@ import { ServiceGuide } from "@/types";
 import { getGuideFreshness } from "@/utils/guideTrust";
 
 type GuideFilter = "all" | "outdated" | "review_soon" | "missing_link" | "missing_change";
+
+export const ErrorBoundary = createRouteErrorBoundary("Admin screen could not load");
 
 export default function AdminGuidesScreen() {
   const [guides, setGuides] = useState<AdminGuideDraft[]>(getLocalAdminGuides());

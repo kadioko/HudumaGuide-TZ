@@ -5,6 +5,7 @@ import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
 import { InfoBanner } from "@/components/InfoBanner";
 import { Pill } from "@/components/Pill";
+import { createRouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
 import { spacing } from "@/constants/theme";
@@ -14,6 +15,8 @@ import { loadMsaidiziAuditReviews, MsaidiziAuditReview, reviewMsaidiziAudit } fr
 type AnalyticsSummary = Awaited<ReturnType<typeof getLocalAnalyticsSummary>>;
 type AuditStatusFilter = "all" | "unreviewed" | "good" | "needs_fix" | "unsafe";
 type AuditConfidenceFilter = "all" | "grounded" | "fallback";
+
+export const ErrorBoundary = createRouteErrorBoundary("Admin screen could not load");
 
 export default function AdminAnalyticsScreen() {
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);

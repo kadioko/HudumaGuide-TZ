@@ -7,6 +7,7 @@ import { AppText } from "@/components/AppText";
 import { InfoBanner } from "@/components/InfoBanner";
 import { MetricTile } from "@/components/MetricTile";
 import { Pill } from "@/components/Pill";
+import { createRouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
 import { colors, spacing } from "@/constants/theme";
@@ -15,6 +16,8 @@ import { getLocalAdminGuides } from "@/services/adminContentService";
 import { useAppStore } from "@/store/useAppStore";
 import { ServiceGuide } from "@/types";
 import { getGuideFreshness, getGuideSourceConfidence } from "@/utils/guideTrust";
+
+export const ErrorBoundary = createRouteErrorBoundary("Admin screen could not load");
 
 export default function AdminIndexScreen() {
   const { width } = useWindowDimensions();

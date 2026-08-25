@@ -2,9 +2,12 @@ import "react-native-gesture-handler";
 import { Stack, router, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { createRouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import { colors } from "@/constants/theme";
 import { useAppStore } from "@/store/useAppStore";
 import { shouldShowAppLock } from "@/utils/security";
+
+export const ErrorBoundary = createRouteErrorBoundary("Something went wrong");
 
 export default function RootLayout() {
   const segments = useSegments();

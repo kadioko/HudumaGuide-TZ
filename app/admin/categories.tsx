@@ -5,11 +5,14 @@ import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
 import { InfoBanner } from "@/components/InfoBanner";
 import { Pill } from "@/components/Pill";
+import { createRouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
 import { TextField } from "@/components/TextField";
 import { spacing } from "@/constants/theme";
 import { AdminCategoryDraft, getLocalAdminCategories, loadAdminCategories, upsertAdminCategory } from "@/services/adminContentService";
+
+export const ErrorBoundary = createRouteErrorBoundary("Admin screen could not load");
 
 export default function AdminCategoriesScreen() {
   const [categories, setCategories] = useState<AdminCategoryDraft[]>(getLocalAdminCategories());

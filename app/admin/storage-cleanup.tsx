@@ -6,6 +6,7 @@ import { AppText } from "@/components/AppText";
 import { EmptyState } from "@/components/EmptyState";
 import { InfoBanner } from "@/components/InfoBanner";
 import { Pill } from "@/components/Pill";
+import { createRouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import { Screen } from "@/components/Screen";
 import { SectionHeader } from "@/components/SectionHeader";
 import {
@@ -15,6 +16,8 @@ import {
 } from "@/services/adminContentService";
 import { formatDate } from "@/utils/copy";
 import { spacing } from "@/constants/theme";
+
+export const ErrorBoundary = createRouteErrorBoundary("Admin screen could not load");
 
 export default function AdminStorageCleanupScreen() {
   const [items, setItems] = useState<StorageCleanupItem[]>([]);

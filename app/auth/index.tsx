@@ -8,6 +8,7 @@ import { AppButton } from "@/components/AppButton";
 import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
 import { InfoBanner } from "@/components/InfoBanner";
+import { createRouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import { Screen } from "@/components/Screen";
 import { TextField } from "@/components/TextField";
 import { colors, spacing } from "@/constants/theme";
@@ -22,6 +23,8 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
+
+export const ErrorBoundary = createRouteErrorBoundary("Account screen could not load");
 
 export default function AuthScreen() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
