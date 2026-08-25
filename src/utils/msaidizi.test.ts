@@ -34,7 +34,9 @@ describe("Msaidizi safety", () => {
     const answer = answerFromGuideList("How do I get NIDA?", "en", [guide]);
 
     expect(answer.confidence).toBe("grounded");
-    expect(answer.citations).toEqual([{ slug: "nida", title: "NIDA", lastVerifiedAt: "2026-06-01" }]);
+    expect(answer.citations).toEqual([
+      { slug: "nida", title: "NIDA", lastVerifiedAt: "2026-06-01", officialUrl: "https://example.com" }
+    ]);
     expect(answer.text).toContain("approved HudumaGuide TZ guide content");
   });
 
