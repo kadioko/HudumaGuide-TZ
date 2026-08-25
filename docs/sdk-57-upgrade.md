@@ -14,10 +14,7 @@ There is no SDK 56 patch that clears this. `expo@56.0.20` is the newest SDK 56 r
 
 A JavaScript engine memory regression matters more here than it would for most apps. HudumaGuide targets budget Android hardware in Tanzania, where the practical failure mode is an out-of-memory kill rather than a slow screen. This is the highest-value technical work on the backlog.
 
-Secondary benefits:
-
-- Clears most of the 9 remaining high-severity `npm audit` findings, which are all transitive Metro/build tooling pinned through the Expo tree. `npm run audit:high` currently blocks `npm run release:check`.
-- Restores a green `npm run release:check`, which is gated today on both `audit:high` and `expo-doctor`.
+Secondary benefit: restores a green `npm run release:check`, which was gated on both `audit:high` and `expo-doctor`.
 
 ## Scope is narrower than it looks
 
@@ -96,3 +93,40 @@ The upgrade touches `package.json`, `package-lock.json`, and possibly `app.json`
 ## Estimate
 
 Half a day if nothing breaks beyond lint. One to two days realistically, with `expo-notifications` scheduling behaviour the most likely source of the difference.
+
+## Outcome
+
+Steps 1-6 are done on `upgrade/sdk-57`. Nothing in the codebase needed changing: no source edits, no `app.json` changes, and no new lint findings from `eslint-config-expo@57`.
+
+| Gate | Result |
+| --- | --- |
+| `npx expo-doctor` | 21/21 checks pass; the Hermes check clears |
+| `npm run verify` | pass |
+| `npm run smoke:web` | pass |
+| `npm audit --audit-level=high` | exits 0 |
+| `npm run release:check` | **exits 0** |
+
+Runtime-checked in a browser against the web target: language selection, onboarding, the home tab, and a dynamic `services/[slug]` route all render with zero console errors, and the deleted `/admin/error` route correctly reports an unmatched route.
+
+### Correction to the audit expectation above
+
+The upgrade on its own cleared nothing — high-severity findings stayed at 9. The cause was more specific than "transitive Metro tooling pinned through the Expo tree": Expo already resolves the patched `metro@0.84.5`, but `react-native@0.86.2` pulls `@react-native/community-cli-plugin`, which depends on the vulnerable `metro@0.84.4`, so the tree carried two copies.
+
+Getting to zero took two further steps, each committed separately:
+
+1. `npm audit fix` — lockfile only, no declared dependency changed. Took high findings from 9 to 4.
+2. An `overrides` block pinning `metro`, `metro-config`, and `metro-transform-worker` to `0.84.5`, deduping both copies onto the version Expo already bundles and drives bundling with. Took the remaining 4 to 0.
+
+Revisit the override at the next React Native upgrade: once `@react-native/community-cli-plugin` ships a patched Metro, it should be removed rather than left to pin an aging version.
+
+11 moderate advisories remain, all in `@expo/config-plugins` and its dependents. `audit:high` does not gate on them.
+
+### Still outstanding
+
+Steps 7-11 need hardware and build credentials, so they are untouched:
+
+- Android preview build via EAS, installed on a physical low-RAM device.
+- Device smoke test of the risk areas above, especially reminder scheduling across quiet hours, the notification permission flow, camera capture, and biometric lock. The web runtime check exercises none of these, and `expo-notifications` remains the most likely place for a behaviour change to hide.
+- `npm run e2e:maestro` against that preview build.
+- A preview OTA update, confirmed to reach an existing install before anything ships to production.
+- `versionCode` bump and the production build.
