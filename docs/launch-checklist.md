@@ -53,6 +53,15 @@
 
 ## App Store Readiness
 
+- Confirm the configured HudumaGuide TZ package is `com.hudumaguide.tz` and keep the version code above the recovered prior code `11`; do not reuse the Budget It package or bundles
+- Keep `app.json` at the next valid Android version code (`12` for this release)
+- Link the confirmed app to the `kadioko` EAS project and commit its generated project ID
+- Add a production `eas.json` profile that generates an Android App Bundle
+- Run `npm run verify` immediately before the build
+- Build a signed `.aab` with the production EAS profile and retain the build URL
+- Upload the `.aab` to the correct Play track and confirm the package name/version code in Play Console
+- Paste the matching English and Kiswahili notes from `docs/release-notes.md`
+- Review the Google Play pre-launch report before rollout
 - Add production app icons and splash screen
 - Add privacy policy
 - Add terms and disclaimer page copy

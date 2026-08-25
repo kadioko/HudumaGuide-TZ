@@ -2,7 +2,7 @@
   "expo": {
     "name": "HudumaGuide TZ",
     "slug": "hudumaguide-tz",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "orientation": "portrait",
     "scheme": "hudumaguide",
     "icon": "./assets/icon.png",
@@ -16,7 +16,7 @@
     },
     "android": {
       "package": "com.hudumaguide.tz",
-      "versionCode": 11,
+      "versionCode": 12,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0A7A55"
