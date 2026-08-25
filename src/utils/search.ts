@@ -101,6 +101,8 @@ function scoreGuide(guide: ServiceGuide, terms: string[]) {
   const title = normalize(`${guide.titleSw} ${guide.titleEn}`);
   const keywords = normalize(guide.keywords.join(" "));
   const haystack = getGuideHaystack(guide);
+  const titleTerms = title.split(" ");
+  const keywordTerms = keywords.split(" ");
   const haystackTerms = haystack.split(" ");
 
   return terms.reduce((score, rawTerm) => {
@@ -120,6 +122,17 @@ function scoreGuide(guide: ServiceGuide, terms: string[]) {
 
     if (haystack.includes(term)) {
       return score + 3;
+    }
+
+    // Typo-tolerant matches keep the same field weighting as exact matches.
+    // Scoring every loose match the same collapsed ranking to the alphabetical
+    // tiebreak, so "nidaa" surfaced Birth Certificate above the NIDA guides.
+    if (hasLooseTermMatch(titleTerms, term)) {
+      return score + 3;
+    }
+
+    if (hasLooseTermMatch(keywordTerms, term)) {
+      return score + 2;
     }
 
     if (hasLooseTermMatch(haystackTerms, term)) {
