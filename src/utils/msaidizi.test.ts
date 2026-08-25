@@ -1,7 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { buildMsaidiziAuditLog } from "@/services/msaidiziService";
 import { answerFromGuideList } from "@/utils/msaidizi";
 import { ServiceGuide } from "@/types";
+
+vi.mock("@/lib/supabase", () => ({ supabase: undefined, isSupabaseConfigured: false }));
 
 const guide: ServiceGuide = {
   id: "svc-nida",
