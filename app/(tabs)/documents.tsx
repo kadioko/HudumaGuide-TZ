@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { Alert, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Alert, FlatList, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import { AppButton } from "@/components/AppButton";
 import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
@@ -45,8 +45,8 @@ export default function DocumentsScreen() {
   const storageCleanupQueue = documents.filter((document) => document.fileName && !userProfile).length;
   const allowedFileTypes = Object.values(documentUploadConfig.allowedFileTypes).map((type) => type.toUpperCase()).join(", ");
 
-  return (
-    <Screen>
+  const listHeader = (
+    <View style={styles.header}>
       <AppCard style={styles.hero}>
         <View style={styles.heroIcon}>
           <Ionicons name="folder-open-outline" size={25} color={colors.green} />
@@ -145,36 +145,47 @@ export default function DocumentsScreen() {
           );
         })}
       </View>
+      <SectionHeader title={selectedFolder === "All" ? "All documents" : selectedFolder} />
+    </View>
+  );
 
-      <View style={styles.stack}>
-        <SectionHeader title={selectedFolder === "All" ? "All documents" : selectedFolder} />
-        {filteredDocuments.length ? (
-          filteredDocuments.map((document) => (
-            <DocumentCard
-              key={document.id}
-              document={document}
-              onOpen={document.fileName ? () => openDocumentFile(document.fileName as string) : undefined}
-              onReplaceFile={userProfile ? () => replaceDocumentFile(document) : undefined}
-              onDeleteFile={document.fileName ? () => deleteOnlyFile(document) : undefined}
-              onDeleteMetadataOnly={() => deleteMetadataOnly(document)}
-              onDelete={() => deleteDocumentRecord(document)}
-            />
-          ))
-        ) : (
-          <>
-            <EmptyState
-              icon="document-text-outline"
-              title={language === "sw" ? "Hakuna document records" : "No document records"}
-              body={
-                language === "sw"
-                  ? "Ongeza record ya document ili ufuatilie expiry na reminders."
-                  : "Add a document record to track expiry dates and reminders."
-              }
-            />
-            <AppButton title="Add first document" icon="add-circle-outline" onPress={() => router.push("/documents/upload")} />
-          </>
+  const listEmpty = (
+    <View style={styles.stack}>
+      <EmptyState
+        icon="document-text-outline"
+        title={language === "sw" ? "Hakuna document records" : "No document records"}
+        body={
+          language === "sw"
+            ? "Ongeza record ya document ili ufuatilie expiry na reminders."
+            : "Add a document record to track expiry dates and reminders."
+        }
+      />
+      <AppButton title="Add first document" icon="add-circle-outline" onPress={() => router.push("/documents/upload")} />
+    </View>
+  );
+
+  return (
+    <Screen scroll={false}>
+      {/* Virtualized: the vault grows with each document a user stores, so
+          every record should not stay mounted on a low-end device. */}
+      <FlatList
+        data={filteredDocuments}
+        keyExtractor={(document) => document.id}
+        renderItem={({ item }) => (
+          <DocumentCard
+            document={item}
+            onOpen={item.fileName ? () => openDocumentFile(item.fileName as string) : undefined}
+            onReplaceFile={userProfile ? () => replaceDocumentFile(item) : undefined}
+            onDeleteFile={item.fileName ? () => deleteOnlyFile(item) : undefined}
+            onDeleteMetadataOnly={() => deleteMetadataOnly(item)}
+            onDelete={() => deleteDocumentRecord(item)}
+          />
         )}
-      </View>
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={listEmpty}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
     </Screen>
   );
 
@@ -266,6 +277,13 @@ function formatBytes(bytes: number) {
 }
 
 const styles = StyleSheet.create({
+  listContent: {
+    gap: spacing.md,
+    paddingBottom: 110
+  },
+  header: {
+    gap: spacing.lg
+  },
   hero: {
     flexDirection: "row",
     alignItems: "center",

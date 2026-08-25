@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { router } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { FlatList, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AppCard } from "@/components/AppCard";
 import { AppText } from "@/components/AppText";
@@ -46,8 +46,8 @@ export default function ServicesScreen() {
     return () => clearTimeout(timer);
   }, [categoryId, language, query, results.length, userProfile?.id]);
 
-  return (
-    <Screen>
+  const listHeader = (
+    <View style={styles.header}>
       <View style={styles.topBar}>
         <SectionHeader
           title={language === "sw" ? "Tafuta huduma" : "Find a service"}
@@ -105,43 +105,68 @@ export default function ServicesScreen() {
         ))}
       </ScrollView>
 
-      <View style={styles.results}>
-        <View style={styles.resultHeader}>
-          <View>
-            <AppText variant="h3">{selectedCategory ? (language === "sw" ? selectedCategory.titleSw : selectedCategory.titleEn) : language === "sw" ? "Guide zote" : "All guides"}</AppText>
-            <AppText variant="small" muted>
-              {language === "sw" ? `${results.length} guide zimepatikana` : `${results.length} guides found`}
-            </AppText>
-          </View>
-          {query || categoryId ? (
-            <AppButton title={language === "sw" ? "Futa" : "Clear"} variant="ghost" onPress={() => { setQuery(""); setCategoryId(undefined); }} />
-          ) : null}
+      <View style={styles.resultHeader}>
+        <View>
+          <AppText variant="h3">{selectedCategory ? (language === "sw" ? selectedCategory.titleSw : selectedCategory.titleEn) : language === "sw" ? "Guide zote" : "All guides"}</AppText>
+          <AppText variant="small" muted>
+            {language === "sw" ? `${results.length} guide zimepatikana` : `${results.length} guides found`}
+          </AppText>
         </View>
-        {results.length ? (
-          results.map((guide) => <ServiceCard key={guide.id} guide={guide} language={language} />)
-        ) : (
-          <>
-            <EmptyState
-              icon="search-outline"
-              title={language === "sw" ? "Hakuna matokeo" : "No results"}
-              body={language === "sw" ? "Jaribu neno kama NIDA, TIN, leseni au BRELA." : "Try NIDA, TIN, licence, or BRELA."}
-            />
-            {query.trim().length >= 2 ? (
-              <AppButton
-                title={language === "sw" ? "Pendekeza guide hii" : "Suggest this guide"}
-                icon="flag-outline"
-                variant="secondary"
-                onPress={() => router.push({ pathname: "/feedback", params: { serviceSlug: `missing:${query.trim()}` } })}
-              />
-            ) : null}
-          </>
-        )}
+        {query || categoryId ? (
+          <AppButton title={language === "sw" ? "Futa" : "Clear"} variant="ghost" onPress={() => { setQuery(""); setCategoryId(undefined); }} />
+        ) : null}
       </View>
+    </View>
+  );
+
+  const listEmpty = (
+    <View style={styles.empty}>
+      <EmptyState
+        icon="search-outline"
+        title={language === "sw" ? "Hakuna matokeo" : "No results"}
+        body={language === "sw" ? "Jaribu neno kama NIDA, TIN, leseni au BRELA." : "Try NIDA, TIN, licence, or BRELA."}
+      />
+      {query.trim().length >= 2 ? (
+        <AppButton
+          title={language === "sw" ? "Pendekeza guide hii" : "Suggest this guide"}
+          icon="flag-outline"
+          variant="secondary"
+          onPress={() => router.push({ pathname: "/feedback", params: { serviceSlug: `missing:${query.trim()}` } })}
+        />
+      ) : null}
+    </View>
+  );
+
+  return (
+    <Screen scroll={false}>
+      {/* Virtualized so the guide catalogue can grow without mounting every row
+          on low-end devices. listHeader is an element, not a component, so the
+          search field is not remounted (and unfocused) on each keystroke. */}
+      <FlatList
+        data={results}
+        keyExtractor={(guide) => guide.id}
+        renderItem={({ item }) => <ServiceCard guide={item} language={language} />}
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={listEmpty}
+        contentContainerStyle={styles.listContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  listContent: {
+    gap: spacing.md,
+    paddingBottom: 110
+  },
+  header: {
+    gap: spacing.lg
+  },
+  empty: {
+    gap: spacing.md
+  },
   topBar: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -190,9 +215,6 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.72
-  },
-  results: {
-    gap: spacing.md
   },
   resultHeader: {
     flexDirection: "row",
