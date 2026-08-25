@@ -3,6 +3,7 @@ node_modules/
 dist/
 web-build/
 playstore-builds/
+PLAYSTORE_UPLOAD_READY/
 .env
 .env.local
 supabase/.temp/
