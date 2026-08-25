@@ -11,7 +11,15 @@ type CostItem = {
 function addDays(days: number) {
   const date = new Date();
   date.setDate(date.getDate() + days);
-  return date.toISOString().slice(0, 10);
+
+  // Format from the local calendar rather than toISOString(), which converts to
+  // UTC first. In Tanzania (UTC+3) that pulled the due date back a day for any
+  // plan created between midnight and 03:00 local time.
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 export function getBusinessCostItems(plan: BusinessPlan): CostItem[] {
